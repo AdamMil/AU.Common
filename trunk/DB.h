@@ -37,7 +37,8 @@
   operations (such as setting the Lock/Cursor types and then doing an Execute), it should
   use `LockDB' and `UnlockDB' to lock the DB object for more than a single call. The DB
   object will attempt to keep itself closed for as long as possible. The DB object uses
-  the "both" threading model.
+  the "both" threading model. However, you cannot store ADO objects in session variables
+  unless you have switched ADO into free threaded mode.
 )~ */
 
 class ATL_NO_VTABLE CDB : 
