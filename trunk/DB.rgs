@@ -1,0 +1,27 @@
+HKCR
+{
+	Common.DB.1 = s 'DB Class'
+	{
+		CLSID = s '{D406FC81-9412-48BA-BCCD-12EADDBB073A}'
+	}
+	Common.DB = s 'DB Class'
+	{
+		CLSID = s '{D406FC81-9412-48BA-BCCD-12EADDBB073A}'
+		CurVer = s 'Common.DB.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {D406FC81-9412-48BA-BCCD-12EADDBB073A} = s 'DB Class'
+		{
+			ProgID = s 'AU.Common.DB.1'
+			VersionIndependentProgID = s 'AU.Common.DB'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Both'
+			}
+			val AppID = s '%APPID%'
+			'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
+		}
+	}
+}

@@ -1,0 +1,111 @@
+/* 
+   This file is part of the AU.Common library, a set of ActiveX
+   controls to aid in Web development.
+   Copyright (C) 2002 Adam Milazzo
+
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+// Common.idl : IDL source for AU.Common
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (Common.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(A553E0A6-F9C3-48C3-98B0-4827C7417E74),
+	version(1.0),
+	helpstring("AU.Common 1.0")
+]
+library AU_CommonLib
+{
+	importlib("stdole2.tlb");
+	importlib("msado15.dll"); // put these where they can be found
+	importlib("asp.tlb");
+
+  /* IConfig interface */
+  [
+	  object,
+	  uuid(C3BC9E26-E130-43CA-906D-25D9CB706597),
+	  dual,
+	  nonextensible,
+	  helpstring("IConfig Interface"),
+	  pointer_default(unique)
+  ]
+  interface IConfig : IDispatch
+  {
+  };
+
+  /* IDB interface */
+  [
+	  object,
+	  uuid(FDA8DEE3-9B92-4CD5-B4D7-35EFC10A3F6E),
+	  dual,
+	  nonextensible,
+	  helpstring("IDB Interface"),
+	  pointer_default(unique)
+  ]
+  interface IDB : IDispatch
+  {
+		[propget, id(1)] HRESULT ConnectionKey([out, retval] BSTR *pVal);
+		[propput, id(1)] HRESULT ConnectionKey([in] BSTR newVal);
+		[propget, id(2)] HRESULT ConnectionValue([out, retval] BSTR *pVal);
+		[propput, id(2)] HRESULT ConnectionValue([in] BSTR newVal);
+		[propget, id(3)] HRESULT CursorType([out, retval] int *pVal);
+		[propput, id(3)] HRESULT CursorType([in] int newVal);
+		[propget, id(4)] HRESULT LockType([out, retval] int *pVal);
+		[propput, id(4)] HRESULT LockType([in] int newVal);
+		[propget, id(5)] HRESULT Timeout([out, retval] long *pVal);
+		[propput, id(5)] HRESULT Timeout([in] long newVal);
+		[propget, id(6)] HRESULT Connection([out, retval] _Connection **pVal);
+		[propget, id(7)] HRESULT Command([out, retval] _Command **pVal);
+		[propget, id(8)] HRESULT IsOpen([out, retval] VARIANT_BOOL *pVal);
+
+    [id(20)] HRESULT Open();
+		[id(21)] HRESULT Close();
+    [id(22)] HRESULT LockDB();
+		[id(23)] HRESULT UnlockDB();
+    [id(25)] HRESULT NewCommand([out, retval] _Command **pVal);
+    [vararg, id(30)] HRESULT Execute([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] _Recordset **pRet);
+    [vararg, id(31)] HRESULT ExecuteNM([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] _Recordset **pRet);
+    [vararg, id(32)] HRESULT ExecuteVal([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] VARIANT *pRet);
+		[vararg, id(33)] HRESULT ExecuteNR([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals);
+		[vararg, id(34)] HRESULT ExecuteNMNR([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals);
+  };
+
+
+  /* Config class */
+	[
+		uuid(18B5A39D-092D-4916-87A5-CF627A34455B),
+		helpstring("Config Class")
+	]
+	coclass Config
+	{
+		[default] interface IConfig;
+	};
+
+  /* DB class */
+  [
+		uuid(D406FC81-9412-48BA-BCCD-12EADDBB073A),
+		helpstring("DB Class")
+	]
+	coclass DB
+	{
+		[default] interface IDB;
+	};
+};
