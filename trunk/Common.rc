@@ -96,6 +96,8 @@ IDR_DB                  REGISTRY                "DB.rgs"
 IDR_CONFIG              REGISTRY                "Config.rgs"
 IDR_DBMAN               REGISTRY                "DBMan.rgs"
 IDR_UTILITY             REGISTRY                "Utility.rgs"
+IDR_UPLOAD              REGISTRY                "Upload.rgs"
+IDR_UPFILE              REGISTRY                "UpFile.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //
