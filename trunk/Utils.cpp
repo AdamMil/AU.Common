@@ -1,7 +1,7 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
    controls and C++ classes used to aid in COM and Web development.
-   Copyright (C) 2002 Adam Milazzo
+   Copyright (C) 2002 Adam Milazzo - http://www.adammil.net
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -72,7 +72,7 @@ HRESULT g_CreateDB(IDB **ppdb, bool share, const WCHAR *key, const WCHAR *sect)
 { assert(ppdb);
   AComPtr<IDBMan> dbman;
   AVAR            var;
-  HRESULT         hRet = share ? g_ASPSessVar(L"oDBMan", &var) : E_FAIL;
+  HRESULT         hRet = share ? g_SessVar(L"oDBMan", &var) : E_FAIL;
 
   if(FAILED(hRet) || var.IsEmpty())
   { if(share)
@@ -134,9 +134,35 @@ HRESULT g_DBCheckType(VARIANT *pv, bool alter)
   return S_OK;
 } /* g_DBCheckType */
 
-/*** asp access ***/
+/*** session/application access ***/
+HRESULT g_SessVar(BSTR sKey, VARIANT *pvout, bool statics=true)
+{ HRESULT hRet = g_ASPSessVar(sKey, pvout, statics);
+  if(FAILED(hRet) || pvout->vt==VT_EMPTY) hRet = g_AUSessVar(sKey, pvout);
+  return hRet;
+} /* g_SessVar */
+
+HRESULT g_AUSessVar(BSTR sKey, VARIANT *pvout)
+{ assert(pvout);
+  if(!pvout) return E_POINTER;
+
+  AComPtr<ISessionMan> sm;
+  AComPtr<IAUSession>  sess;
+  MVAR    var;
+  HRESULT hRet;
+  
+  pvout->vt=VT_EMPTY;
+  CHKRET(g_ASPAppVar(ASTR(L"oSessionMan"), &var, true));
+  if(var.Type() != VT_DISPATCH) return S_FALSE;
+  CHKRET(DQUERY(var.v.pdispVal, ISessionMan, sm));
+  CHKRET(sm->get_Current(&sess));
+  if(wcschr(sKey, L'.')) hRet = sess->get_Item(sKey, pvout);  
+  else hRet = sess->get_Item(ASTR(L'.').Append(sKey), pvout);
+  return hRet;
+} /* g_AUSessVar */
+
 HRESULT g_ASPVar(BSTR sKey, VARIANT *pvout, bool statics, bool bSess)
 { assert(pvout);
+  if(!pvout) return E_POINTER;
   static const ASTR props[2] = { L"Application", L"Session" };
   static const IID *iids[2]  = { &ASP::IID_IApplicationObject, &ASP::IID_ISessionObject };
 
