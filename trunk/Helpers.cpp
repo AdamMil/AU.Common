@@ -286,13 +286,13 @@ void ASTR::ASTRRef::Replace(const WCHAR *find, const WCHAR *rep, WCHAR *p, UA4 f
 { assert(m_Refs==1);
   UA4 rbytes=rlen*sizeof(WCHAR);
   if(flen > rlen)
-  { const TCHAR *r=p+flen, *m;
+  { const WCHAR *r=p+flen, *m;
     UA4    diff=flen-rlen, nrem=0, len;
     while(true)
     { nrem += diff;
       std::memcpy(p, rep, rbytes);
       m = wcsstr(r, find);
-      len = (m==NULL ? m_Str+m_Length-r : m-r);
+      len = (UA4)(m==NULL ? m_Str+m_Length-r : m-r);
       std::memmove(p+=rlen, r, len*sizeof(WCHAR));
       if(m == NULL) break;
       p += len, r = m+flen;

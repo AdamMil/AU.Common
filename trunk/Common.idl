@@ -265,6 +265,7 @@ library AU_CommonLib
     [propget,id(2)] HRESULT Capacity([out,retval] long *pnEls);
     [propput,id(2)] HRESULT Capacity([in] long nEls);
     [propget,id(3)] HRESULT Array([out,retval] VARIANT *pvOut);
+    [propget,id(4)] HRESULT ArrayCopy([out,retval] VARIANT *pvOut);
     
     [id(10)] HRESULT Add([in] VARIANT vEl);
   };
