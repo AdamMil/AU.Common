@@ -134,8 +134,8 @@ class ASTR
   ASTR &   Format(const WCHAR *ctl, ...);
   ASTR &   Format(const WCHAR *ctl, SNP va_list);
   ASTR &   Replace(const WCHAR *find, const WCHAR *rep);
-  ASTR     Substr(IA4 start)          const { return Substring(start, (IA4)Length()-1);  }
-  ASTR     Substr(IA4 start, UA4 len) const { return Substring(start, start+(IA4)len-1); }
+  ASTR     Substr(IA4 start)          const { return Length() ? Substring(start, (IA4)Length()-1) : ASTR();  }
+  ASTR     Substr(IA4 start, UA4 len) const { return len ? Substring(start, start+(IA4)len-1) : ASTR(); }
   ASTR     Substring(IA4 start, IA4 end) const;
   IA4      IndexOf(const WCHAR *str) const;
   IA4      IndexOf(WCHAR) const;
@@ -194,7 +194,7 @@ class ASTR
   class ASTRRef
   { public:
     ASTRRef()    { Init(); }
-    ASTRRef(int) { m_Str=SysAllocStringLen(NULL, m_Max=64); m_Str[m_Length=0]=0; m_Refs=1; }
+    ASTRRef(int) { m_Str=SysAllocStringLen(NULL, m_Max=64); assert(m_Str); m_Str[m_Length=0]=0; m_Refs=1; }
     ASTRRef(BSTR, UA4, UA4);
    ~ASTRRef()    { Free(); }
 
@@ -203,17 +203,17 @@ class ASTR
     void AddRef()  { if(m_Refs != 0) m_Refs++; }
     void Release() { if(m_Refs != 0 && --m_Refs == 0) delete this; }
 
-    void     Format(const WCHAR *ctl, SNP va_list);
-    void     Replace(const WCHAR *find, const WCHAR *rep, WCHAR *p, UA4 flen, UA4 rlen);
+    void    Format(const WCHAR *ctl, SNP va_list);
+    void    Replace(const WCHAR *find, const WCHAR *rep, WCHAR *p, UA4 flen, UA4 rlen);
 
-    void     Append(WCHAR c);
-    void     Append(const WCHAR *, UA4 len=(UA4)-1);
-    void     Prepend(WCHAR c);
-    void     Prepend(const WCHAR *, UA4 len=(UA4)-1);
+    void    Append(WCHAR c);
+    void    Append(const WCHAR *, UA4 len=(UA4)-1);
+    void    Prepend(WCHAR c);
+    void    Prepend(const WCHAR *, UA4 len=(UA4)-1);
 
-    void     Set   (const WCHAR *, UA4 len=(UA4)-1);
-    void     Set   (WCHAR c);
-    void     SetCStr(const char *, UA4 len);
+    void    Set   (const WCHAR *, UA4 len=(UA4)-1);
+    void    Set   (WCHAR c);
+    void    SetCStr(const char *, UA4 len);
 
     void    Reserve(UA4);
     void    SetLength(UA4 len) { m_Length=len, *((U4*)m_Str-1)=(U4)(len<<1); }
@@ -227,6 +227,8 @@ class ASTR
     private:
     void Init() { m_Str=(WCHAR *)ASTR::EmptyBSTR, m_Length=m_Max=m_Refs=0; }
     void Free() { if(m_Str != ASTR::EmptyBSTR) SysFreeString(m_Str); }
+    
+    static int allocs;
   };
   
   ASTRRef *m_Ref;

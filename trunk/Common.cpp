@@ -51,7 +51,12 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID lpReserve
   if(dwReason==DLL_PROCESS_DETACH && !--nInit) g_UnloadConfig();
   ret = _AtlModule.DllMain(dwReason, lpReserved);
   if(dwReason==DLL_PROCESS_ATTACH && !nInit++)
-  { g_vMissing.vt=VT_ERROR, g_vMissing.scode=DISP_E_PARAMNOTFOUND;
+  { 
+  #ifndef NDEBUG
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF |
+                    _CRTDBG_LEAK_CHECK_DF);
+  #endif
+    g_vMissing.vt=VT_ERROR, g_vMissing.scode=DISP_E_PARAMNOTFOUND;
     g_InitConfig(hInst);
   }
   return ret;
