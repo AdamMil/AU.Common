@@ -98,7 +98,7 @@ function Validator(form_id)
            following order: desc, maxlen, minlen, type, dtype, clean, nomatch,
            nmmsg, match, mmsg, range, execav, execbv
   Value  - the value of the control. This is always either a string or null, unless
-           set manually to something else)
+           manually set to something else.
   Typed  - the cached typed value of the control. This is recalculated if null.</PRE>
 )~ */
 function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, clean, nomatch, nmmsg,
@@ -124,8 +124,8 @@ function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, cl
   of parameters, which are described below. The only required parameter is the name.
   'null' can be passed for any other parameter to effectively bypass it. Regexp parameters
   are matched with the global and multi-line flags, and should contain only the regexp.
-  For instance, /a[bc]d/ would be specified as "a[bc]d". Remember to escape the backslashes
-  if necessary for your language!
+  For instance, /a[bc]d/ would be specified as "a[bc]d". Remember to escape backslashes
+  in the regexp string as necessary!
   <PRE>
   name    - the name of the field in the form (the name attribute), ie "login"
   desc    - a short, user friendly description of the field, ie "Login Name"
@@ -442,7 +442,7 @@ function _VALCTL_HTML(attr, value)
   if(attr) { ret += ' '; ret+=attr; }
 
   if(type != "password")
-  { if(value) { this.Value=value; this.Typed=null; }
+  { if(value) { this.Value=String(value); this.Typed=null; }
     if(this.Value)
     { if(type=="textbox")
       { ret += '>'; ret += this.Value; ret += "</textbox>";
@@ -478,7 +478,7 @@ function _VALCTL_Field()
   else return "";
 }
 
-function _VAL_CoerceType(val, type) // assumes 'val' is a string
+function _VAL_CoerceType(val, type)
 { if(type==null || type=="string") return val;
   if(type=="int")
   { val=parseInt(val);
@@ -494,5 +494,4 @@ function _VAL_CoerceType(val, type) // assumes 'val' is a string
   }
   throw new Error(0, "Unknown type "+type);
 }
-
 </script>
