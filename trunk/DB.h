@@ -116,6 +116,8 @@ protected:
   bool m_bInit;
   
   static const DataTypeEnum CDB::m_dbTypes[VT_UINT];
+
+  friend class CDBMan;
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(DB), CDB)

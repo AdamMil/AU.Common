@@ -25,8 +25,9 @@
 
 #include "Common.h"
 
-
 // CDBMan
+
+class CDB;
 
 class ATL_NO_VTABLE CDBMan : 
 	public CComObjectRootEx<CComMultiThreadModel>,
@@ -34,6 +35,9 @@ class ATL_NO_VTABLE CDBMan :
 	public IDispatchImpl<IDBMan, &IID_IDBMan, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
+  CDBMan();
+ ~CDBMan();
+
   DECLARE_REGISTRY_RESOURCEID(IDR_DBMAN)
   DECLARE_NOT_AGGREGATABLE(CDBMan)
   BEGIN_COM_MAP(CDBMan)
@@ -60,7 +64,15 @@ public:
   STDMETHODIMP CreateDB(/*[in,defaultvalue("")]*/ BSTR sKey, /*[in,defaultvalue("")]*/ BSTR sSect, /*[out,retval]*/ IDB **ppDB);
   STDMETHODIMP CreateDBRaw(/*[in]*/ BSTR sConnStr, /*[out,retval]*/ IDB **ppDB);
 
-  UA4 m_MaxShares;
+protected:
+  class BSLess
+  { public:
+    bool operator()(const BSTR a, const BSTR b) const { return wcscmp(a, b)<0; }
+  };
+  typedef std::vector<CDB *> DBList;
+  typedef std::map<BSTR, DBList *, BSLess> DBMap;
+  DBMap m_Map;
+  UA4   m_MaxShares;
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(DBMan), CDBMan)

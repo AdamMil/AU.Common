@@ -27,9 +27,7 @@ VARIANT g_vMissing; // initialized in DllMain (Common.cpp)
 /*** ASTRList implementation ***/
 UA4 ASTRList::Add(const WCHAR *s, UA4 len)
 { UA4   ret  = (UA4)m_Vec.size();
-  ASTR *pstr = new ASTR;
-  pstr->Set(s, len);
-  m_Vec.push_back(pstr);
+  m_Vec.push_back(ASTR(s));
   return ret;
 } /* Add */
 
@@ -59,7 +57,7 @@ ASTR ASTRList::Join(const WCHAR *s) const
 
 /*** ASTR implementation ***/
 ASTR & ASTR::Attach(BSTR str)
-{ if(m_Str != EmptyBSTR) SysFreeString(m_Str);
+{ Free();
   if(str)
   { m_Length = m_Max = (UA4)SysStringLen(str);
     m_Str    = str;
@@ -76,7 +74,7 @@ BSTR ASTR::Detach()
 } /* Detach */
 
 void ASTR::Clear()
-{ if(m_Str != EmptyBSTR) SysFreeString(m_Str);
+{ Free();
   Init();
 } /* Clear */
 
@@ -160,10 +158,11 @@ ASTRList ASTR::Split(const WCHAR *sep) const
     WCHAR *p, *q=m_Str;
     UA4    slen=(UA4)wcslen(sep);
     while(p=wcsstr(q, sep))
-    { list.Add(tmp.Set(q, (p-q)));
-      q+=slen;
+    { list.Add(tmp.Set(q, (UA4)(p-q)));
+      q=p+slen;
     }
-    if(tmp.Set(q, (p-q)).Length()) tmp.Add(tmp);
+    tmp.Set(q, (UA4)(m_Str+m_Length-q)).Length();
+    list.Add(tmp);
   }
   return list;
 } /* Split */
@@ -186,7 +185,7 @@ ASTR & ASTR::SetCStr(const char *s)
 
 void ASTR::Reserve(UA4 len)
 { if(m_Max<len)
-  { if(m_Str != EmptyBSTR) SysFreeString(m_Str);
+  { Free();
     if(m_Max==0) m_Max=64;
     while(m_Max<len) m_Max *= 2;
     m_Str = SysAllocStringLen(NULL, m_Max);
@@ -249,7 +248,7 @@ void ASTR::Grow(UA4 len)
   
   WCHAR *tmp = SysAllocStringLen(NULL, m_Max);
   SNP memcpy(tmp, m_Str, (m_Length+1)*sizeof(WCHAR));
-  if(m_Str != EmptyBSTR) SysFreeString(m_Str);
+  Free();
   m_Str = tmp;
 } /* Grow */
 
@@ -399,6 +398,10 @@ AVAR AXMLNode::Value() const
 { assert(p != NULL);
   AVAR ret;
   p->get_nodeValue(&ret);
+  if(ret.Type()==VT_NULL)
+  { ret.v.vt = VT_BSTR;
+    ret.v.bstrVal = Text().Detach();
+  }
   return ret;
 } /* Value */
 

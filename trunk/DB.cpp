@@ -27,8 +27,13 @@ CDB::CDB()
 { m_nTimeout   = 30;
   m_CursorType = adOpenForwardOnly;
   m_LockType   = adLockReadOnly;
+  m_ConnStr    = NULL;
   m_bInit      = false;
 } /* CDB */
+
+CDB::~CDB()
+{ SysFreeString(m_ConnStr);
+} /* ~CDB */
 
 /* ~(MODULES::DB, p'DB::ConnSection
   <PRE>
@@ -42,12 +47,14 @@ CDB::CDB()
 )~ */
 STDMETHODIMP CDB::get_ConnSection(BSTR *psSect)
 { if(!psSect) return E_POINTER;
+  AComLock lock(this);
   *psSect = m_ConnSect.IsEmpty() ? SysAllocString(L"Default") : m_ConnSect.ToBSTR();
   return S_OK;
 } /* get_ConnSection */
 
 STDMETHODIMP CDB::put_ConnSection(BSTR sSect)
-{ if(m_bInit && m_ConnSect != sSect) Close();
+{ AComLock lock(this);
+  if(m_bInit && m_ConnSect != sSect) Close();
   m_ConnSect = sSect;
   return S_OK;
 } /* put_ConnSection */
@@ -64,12 +71,14 @@ STDMETHODIMP CDB::put_ConnSection(BSTR sSect)
 )~ */
 STDMETHODIMP CDB::get_ConnKey(BSTR *psKey)
 { if(!psKey) return E_POINTER;
+  AComLock lock(this);
   *psKey = m_ConnKey.IsEmpty() ? SysAllocString(L"DB/Default") : m_ConnKey.ToBSTR();
   return S_OK;
 } /* get_ConnKey */
 
 STDMETHODIMP CDB::put_ConnKey(BSTR sKey)
-{ if(m_bInit && m_ConnKey != sKey) Close();
+{ AComLock lock(this);
+  if(m_bInit && m_ConnKey != sKey) Close();
   m_ConnKey = sKey;
   return S_OK;
 } /* put_ConnKey */
@@ -86,6 +95,7 @@ STDMETHODIMP CDB::put_ConnKey(BSTR sKey)
 )~ */
 STDMETHODIMP CDB::get_ConnString(BSTR *psStr)
 { if(!psStr) return E_POINTER;
+  AComLock lock(this);
   if(m_ConnStr==NULL)
   { AVAR    var;
     HRESULT hRet;
@@ -97,7 +107,8 @@ STDMETHODIMP CDB::get_ConnString(BSTR *psStr)
 } /* get_ConnString */
 
 STDMETHODIMP CDB::put_ConnString(BSTR sStr)
-{ if(m_bInit) Close();
+{ AComLock lock(this);
+  if(m_bInit) Close();
   SysFreeString(m_ConnStr);
   m_ConnStr = sStr&&sStr[0] ? SysAllocString(sStr) : NULL;
   return S_OK;
@@ -114,12 +125,14 @@ STDMETHODIMP CDB::put_ConnString(BSTR sStr)
 )~ */
 STDMETHODIMP CDB::get_CursorType(int *pnType)
 { if(!pnType) return E_POINTER;
+  AComLock lock(this);
   *pnType = m_CursorType;
   return S_OK;
 } /* get_CursorType */
 
 STDMETHODIMP CDB::put_CursorType(int nType)
-{ m_CursorType = nType;
+{ AComLock lock(this);
+  m_CursorType = nType;
   return S_OK;
 } /* put_CursorType */
 
@@ -134,12 +147,14 @@ STDMETHODIMP CDB::put_CursorType(int nType)
 )~ */
 STDMETHODIMP CDB::get_LockType(int *pnType)
 { if(!pnType) return E_POINTER;
+  AComLock lock(this);
   *pnType = m_LockType;
   return S_OK;
 } /* get_LockType */
 
 STDMETHODIMP CDB::put_LockType(int nType)
-{ m_LockType = nType;
+{ AComLock lock(this);
+  m_LockType = nType;
   return S_OK;
 } /* put_LockType */
 
@@ -153,12 +168,14 @@ STDMETHODIMP CDB::put_LockType(int nType)
 )~ */
 STDMETHODIMP CDB::get_Timeout(long *pnTimeout)
 { if(!pnTimeout) return E_POINTER;
+  AComLock lock(this);
   *pnTimeout = (long)m_LockType;
   return S_OK;
 } /* get_Timeout */
 
 STDMETHODIMP CDB::put_Timeout(long nTimeout)
 { if(nTimeout < 0) return E_INVALIDARG;
+  AComLock lock(this);
   m_nTimeout = (UA4)nTimeout;
   if(m_Cmd) return m_Cmd->put_CommandTimeout(nTimeout);
 	return S_OK;
@@ -171,9 +188,10 @@ STDMETHODIMP CDB::put_Timeout(long nTimeout)
 )~ */
 STDMETHODIMP CDB::get_Connection(ADOConnection **ppConn)
 { HRESULT hRet;
-  if(!psConn)  return E_POINTER;
+  if(!ppConn)  return E_POINTER;
+  AComLock lock(this);
   if(!m_bInit) CHKRET(Init());
-  m_Conn.CopyTo(psConn);
+  m_Conn.CopyTo(ppConn);
   return S_OK;
 } /* get_Connection */
 
@@ -184,9 +202,10 @@ STDMETHODIMP CDB::get_Connection(ADOConnection **ppConn)
 )~ */
 STDMETHODIMP CDB::get_Command(ADOCommand **ppCmd)
 { HRESULT hRet;
-  if(!psCmd)   return E_POINTER;
+  if(!ppCmd)   return E_POINTER;
+  AComLock lock(this);
   if(!m_bInit) CHKRET(Init());
-  m_Cmd.CopyTo(psCmd);
+  m_Cmd.CopyTo(ppCmd);
   return S_OK;
 } /* get_Command */
 
@@ -200,6 +219,7 @@ STDMETHODIMP CDB::get_Command(ADOCommand **ppCmd)
 )~ */
 STDMETHODIMP CDB::get_IsOpen(VARIANT_BOOL *pbOpen)
 { if(!pbOpen) return E_POINTER;
+  AComLock lock(this);
   *pbOpen = m_bInit ? VBTRUE : VBFALSE;
 	return S_OK;
 } /* get_IsOpen */
@@ -211,7 +231,8 @@ STDMETHODIMP CDB::get_IsOpen(VARIANT_BOOL *pbOpen)
   itself when necessary.
 )~ */
 STDMETHODIMP CDB::Open()
-{ return m_bInit ? S_OK : Init();
+{ AComLock lock(this);
+  return m_bInit ? S_OK : Init();
 } /* Open */
 
 /* ~(MODULES::DB, f'DB::Close
@@ -222,7 +243,8 @@ STDMETHODIMP CDB::Open()
   connection when its last reference is released.
 )~ */
 STDMETHODIMP CDB::Close()
-{ if(m_Cmd)  m_Cmd.Release();
+{ AComLock lock(this);
+  if(m_Cmd)  m_Cmd.Release();
   if(m_Conn) m_Conn->Close();
   m_bInit = false;
   return S_OK;
@@ -271,16 +293,17 @@ STDMETHODIMP CDB::UnlockDB()
   ADOConnection object.
 )~ */
 STDMETHODIMP CDB::NewCommand(ADOCommand **ppCmd)
-{ if(!psCmd) return E_POINTER;
+{ if(!ppCmd) return E_POINTER;
   AComPtr<ADOCommand> cmd;
   HRESULT hRet;
   VARIANT var;
   var.vt=VT_DISPATCH, var.pdispVal=NULL;
 
+  AComLock lock(this);
   if(!m_bInit) CHKRET(Init());
   CHKRET(CREATE(CADOCommand, IADOCommand, cmd));
   CHKRET(IQUERY(m_Conn, IDispatch, &var.pdispVal));
-  IFS(cmd->put_ActiveConnection(var)) cmd.CopyTo(psCmd);
+  IFS(cmd->put_ActiveConnection(var)) cmd.CopyTo(ppCmd);
   VariantClear(&var);
   return hRet;
 } /* NewCommand */
@@ -326,11 +349,12 @@ STDMETHODIMP CDB::NewCommand(ADOCommand **ppCmd)
   get the highest performance, consider using the ExecuteO* functions.
 )~ */
 STDMETHODIMP CDB::Execute(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, ADORecordset **ppRS)
-{ if(!ppRS) return ExecuteNR(sSQL, aVals);
-  HRESULT hRet;
+{ if(!ppRS) return E_POINTER;
+  HRESULT  hRet;
+  AComLock lock(this);
   CHKRT2(StartExecute(sSQL), Done);
   CHKRT2(FillParams(aVals), Done);
-  hRet = DoExecute(psRS);
+  hRet = DoExecute(ppRS);
   Done:
   ResetDefaults();
   return hRet;
@@ -391,11 +415,12 @@ STDMETHODIMP CDB::Execute(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, ADORecordset **p
   are always prefixed with @.
 )~ */
 STDMETHODIMP CDB::ExecuteO(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals, ADORecordset **ppRS)
-{ if(!ppRS) return ExecuteONR(sSQL, sParms, aVals);
-  HRESULT hRet;
+{ if(!ppRS) return E_POINTER;
+  HRESULT  hRet;
+  AComLock lock(this);
   CHKRT2(StartExecute(sSQL), Done);
   CHKRT2(FillParamsO(sParms, aVals), Done);
-  hRet = DoExecute(psRS);
+  hRet = DoExecute(ppRS);
   Done:
   ResetDefaults();
   return hRet;
@@ -411,6 +436,7 @@ STDMETHODIMP CDB::ExecuteVal(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, VARIANT *pvOu
 { if(!pvOut) return E_POINTER;
   ARecordset rs;
   HRESULT    hRet;
+  AComLock lock(this);
   CHKRET(Execute(sSQL, aVals, &rs));
   return g_GetField(rs, 0, pvOut);
 } /* ExecuteVal */
@@ -426,6 +452,7 @@ STDMETHODIMP CDB::ExecuteVal(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, VARIANT *pvOu
 STDMETHODIMP CDB::ExecuteNR(BSTR sSQL, SAFEARRAY(VARIANT) *aVals)
 { ARecordset rs;
   HRESULT    hRet;
+  AComLock   lock(this);
   CHKRT2(StartExecute(sSQL), Done);
   CHKRT2(FillParams(aVals), Done);
   hRet = m_Cmd->Execute(NULL, NULL, adExecuteNoRecords, &rs);
@@ -445,8 +472,9 @@ STDMETHODIMP CDB::ExecuteNR(BSTR sSQL, SAFEARRAY(VARIANT) *aVals)
 STDMETHODIMP CDB::ExecuteONR(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals)
 { ARecordset rs;
   HRESULT    hRet;
-  CHKRT(StartExecute(sSQL), Done);
-  CHKRT(FillParamsO(sParms, aVals), Done);
+  AComLock   lock(this);
+  CHKRT2(StartExecute(sSQL), Done);
+  CHKRT2(FillParamsO(sParms, aVals), Done);
   hRet = m_Cmd->Execute(NULL, NULL, adExecuteNoRecords, &rs);
   Done:
   ResetDefaults();
@@ -467,9 +495,10 @@ STDMETHODIMP CDB::Output(BSTR sParam, VARIANT *pvOut)
   if(!pvOut) return E_POINTER;
   AComPtr<ADOParameters> parms;
   AComPtr<ADOParameter>  parm;
-  HRESULT hRet;
-  VARIANT var;
-
+  HRESULT  hRet;
+  VARIANT  var;
+  AComLock lock(this);
+  
   var.vt=VT_BSTR, var.bstrVal=sParam;
   CHKRET(m_Cmd->get_Parameters(&parms));
   CHKRET(parms->get_Item(var, &parm))
@@ -488,16 +517,17 @@ HRESULT CDB::Init()
   CHKRET(m_Conn->get_State(&state));
   if(state == adStateClosed)
   { BSTR connstr;
+    AVAR var;
     
     if(m_ConnStr==NULL)
-    { AVAR var;
-      CHKRET(g_Config(m_ConnKey.IsEmpty() ? ASTR(L"DB/Default") : m_ConnKey, ASTR(L"string"), m_ConnSect, var));
+    { CHKRET(g_Config(m_ConnKey.IsEmpty() ? ASTR(L"DB/Default") : m_ConnKey, ASTR(L"string"), m_ConnSect, var));
       connstr = var.Detach().bstrVal;
     }
     else connstr=m_ConnStr;
-    CHKRET(m_Conn->Open(connstr, NULL, NULL, -1));
+    hRet = m_Conn->Open(connstr, NULL, NULL, -1);
+    if(m_ConnStr==NULL) SysFreeString(connstr);
+    CHKRET(hRet);
 
-    var.Clear();
     CHKRET(IQUERY(m_Conn, IDispatch, &var.v.pdispVal))
     var.v.vt = VT_DISPATCH;
     hRet = m_Cmd->put_ActiveConnection(var);
@@ -596,11 +626,12 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   SAFEARRAY *array = aVals && *aVals ? *aVals : NULL;
   ASTRList   list = ASTR(sParms).Split(L",");
   ASTR       name;
-  VARIANT   *pvar;
+  VARIANT   *pvar, *vars;
   WCHAR     *pc, *p2;
-  long       vi, nvars=0, li, len=0, size, type;
+  long       len=0, size, type;
+  UA4        li, vi, nvars=0;
+  HRESULT    hRet;
   VARTYPE    vt;
-  WCHAR      fc;
   
   for(li=0; li<list.Length(); li++) if(list[li][0]==L'@' || list[li][0]==L'+') nvars++;
   if(nvars && (!array || array->rgsabound[0].cElements != nvars)) return E_INVALIDARG;
@@ -610,11 +641,13 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   var.SetI4(0);
   while(len--) parms->Delete(var);
   if(array == NULL) return S_FALSE;
-
+  vars = (VARIANT*)array->pvData;
+  
   for(li=vi=0; li<list.Length(); li++)
-  { ASTR &s = list[i], name = s+1, fc=s[0];
+  { ASTR &s = list[li], name = (WCHAR*)s+1, fc=s[0];
     if(fc==L'@' || fc==L'+')
-    { pvar = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
+    { 
+      pvar = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
       size = (vt==VT_BSTR ? SysStringLen(pvar->bstrVal) : 1);
       if(vt > VT_UINT) return E_INVALIDARG;
       type = m_dbTypes[vt];

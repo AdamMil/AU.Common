@@ -81,7 +81,7 @@ class ASTRList
   const ASTR & operator[](int i) const { return *m_Vec[i]; }
   
   private:
-  std::vector<ASTR *> m_Vec;
+  std::vector<ASTR> m_Vec;
 };
 
 /* ASTR */
@@ -91,7 +91,7 @@ class ASTR
   ASTR(WCHAR c)        { Init(); Set(c); }
   ASTR(const WCHAR *s) { Init(); Set(s); }
   ASTR(const ASTR &s)  { Init(); Set(s); }
- ~ASTR() { SysFreeString(m_Str);         }
+ ~ASTR() { Free(); }
 
   operator WCHAR *()             { return m_Str; }
   operator const WCHAR *() const { return m_Str; }
@@ -155,7 +155,8 @@ class ASTR
   WCHAR * m_Str;
   UA4     m_Length, m_Max;
   
-  void Init() { m_Str=(WCHAR *)EmptyBSTR, m_Length=m_Max=0; }
+  void Init() { m_Str=(WCHAR *)EmptyBSTR, m_Length=m_Max=0;  }
+  void Free() { if(m_Str != EmptyBSTR) SysFreeString(m_Str); }
   void Grow(UA4);
 
   friend bool operator==(const WCHAR *a, const ASTR &b);
@@ -203,8 +204,8 @@ class AComPtr
   bool operator <(T *rhs) const { return p<rhs;   }
   bool operator==(T *rhs) const { return p==rhs;  }
 
-  AComPtr<T>& operator=(T *lp)          { return Set(lp);   }
-  AComPtr<T>& operator=(AComPtr<T> &lp) { return Set(lp.p); }
+  AComPtr<T> & operator=(T *lp)          { return Set(lp);   }
+  AComPtr<T> &  operator=(AComPtr<T> &lp) { return Set(lp.p); }
 
   bool IsEqualObject(IUnknown *op)
   { if(p==NULL && pOther==NULL) return true;
@@ -379,6 +380,20 @@ class AAutoLock
   private:
   ACritSec &m_CS;
   bool      m_bLocked;
+};
+
+class AComLock
+{ public:
+  typedef ATL::CComObjectRootEx<ATL::CComMultiThreadModel> obj;
+  AComLock(obj *p, bool locked=false) { m_O=p; m_bLocked=locked; if(!locked) p->Lock(); }
+ ~AComLock() { if(m_bLocked) m_O->Unlock(); }
+  
+  void Lock()   { assert(!m_bLocked); m_O->Lock();   m_bLocked=true;  }
+  void Unlock() { assert( m_bLocked); m_O->Unlock(); m_bLocked=false; }
+
+  private:
+  obj *m_O;
+  bool m_bLocked;
 };
 
 // defined in Helpers.cpp

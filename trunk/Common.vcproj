@@ -36,7 +36,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="msxml2.lib mtxguid.lib adoid.lib"
+				AdditionalDependencies="msxml2.lib mtxguid.lib"
 				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile=".\Common.def"
@@ -105,8 +105,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="msxml2.lib mtxguid.lib adoid.lib"
-				OutputFile="$(OutDir)/AU.Common.dll"
+				AdditionalDependencies="msxml2.lib mtxguid.lib"
+				OutputFile="$(OutDir)/AU_Common.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile=".\Common.def"
 				GenerateDebugInformation="TRUE"
@@ -253,6 +253,19 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="documentation.html">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating documentation..."
+						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p AU.Common $(ProjectDir)\*.h $(ProjectDir)\*.cpp
+"
+						AdditionalDependencies="*.cpp *.h"
+						Outputs="documentation.html"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
