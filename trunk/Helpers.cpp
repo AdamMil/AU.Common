@@ -24,6 +24,31 @@
 /*** Globals ***/
 VARIANT g_vMissing; // initialized in DllMain (Common.cpp)
 
+/*** ASTRList implementation ***/
+UA4 ASTRList::Add(ASTR &s)
+{ UA4   ret  = (UA4)m_Vec.size();
+  ASTR *pstr = new ASTR(s);
+  m_Vec.push_back(pstr);
+  return ret;
+} /* Add */
+
+void ASTRList::Clear()
+{ UA4 i, len = Length();
+  for(i=0; i<len; i++) delete m_Vec[i];
+  m_Vec.clear();
+} /* Clear */
+
+ASTR ASTRList::Join(const WCHAR *s) const
+{ ASTR ret;
+  UA4  i, len = Length(), total, slen;
+  if(len == 0) return ret;
+  slen = (UA4)wcslen(s), total = slen*(len-1);
+  for(i=0; i<len; i++) total += m_Vec[i]->Length();
+  ret.Reserve(total);
+  for(i=0; i<len; i++) ret += *m_Vec[i];
+  return ret;
+} /* Join */
+
 /*** ASTR implementation ***/
 ASTR & ASTR::Attach(BSTR str)
 { SysFreeString(m_Str);
@@ -65,6 +90,56 @@ ASTR & ASTR::Format(const WCHAR *ctl, std::va_list list)
   Set(buf, len);
   return *this;
 } /* Format(const WCHAR *, std::va_list) */
+
+ASTR & ASTR::Replace(const WCHAR *find, const WCHAR *rep)
+{ assert(find && rep);
+  UA4 flen=(UA4)wcslen(find), rlen=(UA4)wcslen(rep), rbytes=rlen*sizeof(WCHAR);
+  if(flen==0) return *this;
+  WCHAR *p=wcsstr(m_Str, find);
+  if(!p) return *this;
+
+  if(flen < rlen)
+  { ASTR tmp;
+    WCHAR *q=m_Str;
+    do
+    { tmp.Append(q, (UA4)(p-q));
+      tmp.Append(rep, rlen);
+    } while((p=wcsstr(q=p+flen, find)) != NULL);
+    if(q-m_Str != m_Length) tmp.Append(q, m_Length-(q-m_Str));
+    Attach(tmp.Detach());
+  }
+  else if(flen > rlen)
+  { WCHAR *q;
+    UA4    diff=flen-rlen, dbytes=diff*sizeof(WCHAR), nrem=0;
+    do
+    { nrem += diff;
+      memcpy(p, rep, rbytes);
+      q = wcsstr(p+=flen, find);
+      memmove(p+rlen, p, (q==NULL ? m_Str+m_Length-p : q-p)*sizeof(WCHAR));
+    } while((p=q) != NULL);
+    m_Str[m_Length-nrem]=0;
+    SetLength(m_Length-nrem);
+  }
+  else do memcpy(p, rep, rbytes); while((p=wcsstr(p+=flen, find)) != NULL);
+  return *this;
+} /* Replace */
+
+ASTR ASTR::Substring(IA4 start, IA4 end) const
+{ ASTR ret;
+  if(start<0) start += m_Length; // negative indexes become index from end
+  if(end<0)   end   += m_Length;
+
+  UA4 s=(UA4)start, e=(UA4)end;
+  if(s > e || s >= m_Length) return ret;
+  if(e >= m_Length) e = m_Length-1;
+
+  ret.Set(m_Str+s, e-s+1);
+  return ret;
+} /* Substring */
+
+ASTRList ASTR::Split(const WCHAR *) const
+{
+} /* Split */
 
 void ASTR::Reserve(UA4 len)
 { if(m_Max<len)
@@ -108,7 +183,8 @@ void ASTR::Set(const WCHAR *s, UA4 len)
 { assert(s != NULL);
   if(len==(UA4)-1) len=(UA4)wcslen(s);
   if(len>m_Max) Reserve(len);
-  std::memcpy(m_Str, s, (len+1)*sizeof(WCHAR));
+  std::memcpy(m_Str, s, len*sizeof(WCHAR));
+  m_Str[len]=0;
   SetLength(len);
 } /* Set */
 
@@ -253,6 +329,7 @@ ASTR AXMLNode::Attr(BSTR attr) const
   IFS(p->get_attributes(&attrs))
     IFS(attrs->getNamedItem(attr, &node))
       return node.Text();
+  return ASTR();
 } /* Attr */
   
 ASTR AXMLNode::Text() const

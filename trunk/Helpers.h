@@ -22,6 +22,7 @@
 #define AU_COMMON_HELPERS_H
 
 #include <cstdarg>
+#include <vector>
 
 #define SAFEARRAY(t) SAFEARRAY *
 #define CHKRET(c)    { if(FAILED(hRet=(c))) return hRet; }
@@ -56,7 +57,27 @@ typedef unsigned         UMI;
 
 template<typename T> T Min(T a, T b) { return a<b ? a : b; }
 template<typename T> T Max(T a, T b) { return a<b ? b : a; }
+template<typename T> void Swap(T &a, T &b) { T t=a; a=b, b=t; }
 
+/* ASTRList */
+class ASTR;
+class ASTRList
+{ public:
+ ~ASTRList() { Clear(); }
+ 
+  UA4  Add(ASTR &);
+  void Clear();
+  UA4  Length() const { return (UA4)m_Vec.size(); }
+  ASTR Join(const WCHAR *) const;
+
+  ASTR & operator[](int i) { return *m_Vec[i]; }
+  const ASTR & operator[](int i) const { return *m_Vec[i]; }
+  
+  private:
+  std::vector<ASTR *> m_Vec;
+};
+
+/* ASTR */
 class ASTR
 { public:
   ASTR() { Init(); }
@@ -72,15 +93,17 @@ class ASTR
   BSTR    Detach();
   void    Clear();
 
-  ASTR &  Format(const WCHAR *ctl, ...);
-  ASTR &  Format(const WCHAR *ctl, std::va_list);
-  ASTR &  Replace(const WCHAR *find, const WCHAR *rep);
-  ASTR &  Substr(UA4 start) { return Substr(start, m_Length); }
-  ASTR &  Substr(UA4 start, UA4 end);
+  ASTR &   Format(const WCHAR *ctl, ...);
+  ASTR &   Format(const WCHAR *ctl, std::va_list);
+  ASTR &   Replace(const WCHAR *find, const WCHAR *rep);
+  ASTR     Substr(IA4 start)          const { return Substring(start, (IA4)m_Length-1);  }
+  ASTR     Substr(IA4 start, UA4 len) const { return Substring(start, start+(IA4)len-1); }
+  ASTR     Substring(IA4 start, IA4 end) const;
+  ASTRList Split(const WCHAR *) const;
 
   UA4     Length() const { return m_Length; }
   void    Reserve(UA4);
-  void    SetLength(UA4 len) { *((U4*)m_Str-1) = (U4)(len<<1); }
+  void    SetLength(UA4 len) { m_Length=len, *((U4*)m_Str-1)=(U4)(len<<1); }
   void    UpdateLength();
 
   BSTR    ToBSTR() const { return SysAllocString(m_Str); }
@@ -138,6 +161,7 @@ inline bool operator>=(const WCHAR *a, const ASTR &b) { assert(a != NULL); retur
 inline ASTR operator+(WCHAR c, const ASTR &s)         { WCHAR buf[2] = {c, 0}; return ASTR(buf)+=s; }
 inline ASTR operator+(const WCHAR *a, const ASTR &b)  { assert(a != NULL); return ASTR(a)+=b;       }
 
+/* AComPtr */
 template<typename T>
 class _NoAddRefReleaseOnAComPtr : public T
 { private:
@@ -218,6 +242,7 @@ class AComPtr
   }
 };
 
+/* AVAR */
 class AVAR
 { public:
   AVAR()                  { VariantInit(&v); }
@@ -264,6 +289,7 @@ bool operator>(const VARIANT &lhs,  const AVAR &rhs) { return rhs.Cmp(lhs)<=0; }
 bool operator<=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)>0;  }
 bool operator>=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)<0;  }
 
+/* AXMLNode */
 class AXMLNode : public AComPtr<IXMLDOMNode>
 { protected:
   typedef IXMLDOMNode Node;
@@ -291,6 +317,7 @@ class AXMLNode : public AComPtr<IXMLDOMNode>
   AVAR     Value() const;
 };
 
+/* AXMLNodeList */
 class AXMLNodeList : public AComPtr<IXMLDOMNodeList>
 { protected:
   typedef IXMLDOMNodeList List;
@@ -310,6 +337,7 @@ class AXMLNodeList : public AComPtr<IXMLDOMNodeList>
   AXMLNode Next();
 };
 
+/* ACritSec */
 class ACritSec
 { public:
   ACritSec() { InitializeCriticalSection(&m_CS); }
@@ -322,6 +350,7 @@ class ACritSec
   CRITICAL_SECTION m_CS;  
 };
 
+/* AAutoLock */
 class AAutoLock
 { public:
   AAutoLock(ACritSec &cs, bool bLocked=false) : m_CS(cs) { m_bLocked=bLocked; }
