@@ -64,6 +64,7 @@ STDMETHODIMP CConfig::get_Item(BSTR sKey, BSTR sType, BSTR sSection, VARIANT *pv
   if(!type.IsEmpty())
   { if(sType==L"string")      hRet=data.ChangeType(VT_BSTR);
     else if(sType==L"int")    hRet=data.ChangeType(VT_I4);
+    else if(sType==L"bool")   hRet=data.ChangeType(VT_BOOL);
     else if(sType==L"date")   hRet=data.ChangeType(VT_DATE);
     else if(sType==L"bigint") hRet=data.ChangeType(VT_I8);
     else if(sType==L"base64") ; // TODO: add base64 decoder
@@ -138,7 +139,7 @@ STDMETHODIMP CConfig::OpenXML(BSTR sXML)
   <PRE>HRESULT OpenFile([in] BSTR sPath);</PRE>
   The OpenFile method loads the Config object from a file. The path to the file
   is passed in the 'sPath' argument. The path should be absolute, but can be local
-  (ie. "C:\file.xml") on a share (ie. "\\server\share\file.xml") or on a web site
+  (ie. "C:\file.xml"), on a share (ie. "\\server\share\file.xml"), or on a web site
   (ie. "http://www.boo.com/config.xml"). It is recommended that the file be local
   or on a share, though, both for performance reasons and to prevent the load from
   failing due to the server being busy, etc. `Close' will be called automatically,

@@ -76,6 +76,7 @@ namespace ASP
 #include <cstring>
 #include <map>
 #include <vector>
+#include <string>
 
 #include "Helpers.h"
 #include "Utils.h"

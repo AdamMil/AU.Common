@@ -73,12 +73,12 @@ class ASTRList
  
   UA4  Add(const WCHAR *, UA4 len);
   UA4  Add(ASTR &);
-  void Clear();
+  void Clear() { m_Vec.clear(); }
   UA4  Length() const { return (UA4)m_Vec.size(); }
   ASTR Join(const WCHAR *) const;
 
-  ASTR & operator[](int i) { return *m_Vec[i]; }
-  const ASTR & operator[](int i) const { return *m_Vec[i]; }
+  ASTR & operator[](int i) { return m_Vec[i]; }
+  const ASTR & operator[](int i) const { return m_Vec[i]; }
   
   private:
   std::vector<ASTR> m_Vec;
@@ -90,46 +90,50 @@ class ASTR
   ASTR()               { Init(); }
   ASTR(WCHAR c)        { Init(); Set(c); }
   ASTR(const WCHAR *s) { Init(); Set(s); }
-  ASTR(const ASTR &s)  { Init(); Set(s); }
- ~ASTR() { Free(); }
+  ASTR(const ASTR &s)  { (m_Ref=s.m_Ref)->AddRef(); }
+ ~ASTR() { m_Ref->Release(); }
 
-  operator WCHAR *()             { return m_Str; }
-  operator const WCHAR *() const { return m_Str; }
+  operator WCHAR *()             { return m_Ref->m_Str; }
+  operator const WCHAR *() const { return m_Ref->m_Str; }
 
   ASTR &  Attach(BSTR str);
   BSTR    Detach();
+  ASTR &  Own()   { CopyOnWrite(); return *this; }
   void    Clear();
 
   ASTR &   Format(const WCHAR *ctl, ...);
   ASTR &   Format(const WCHAR *ctl, SNP va_list);
   ASTR &   Replace(const WCHAR *find, const WCHAR *rep);
-  ASTR     Substr(IA4 start)          const { return Substring(start, (IA4)m_Length-1);  }
+  ASTR     Substr(IA4 start)          const { return Substring(start, (IA4)Length()-1);  }
   ASTR     Substr(IA4 start, UA4 len) const { return Substring(start, start+(IA4)len-1); }
   ASTR     Substring(IA4 start, IA4 end) const;
   ASTRList Split(const WCHAR *) const;
   ASTR     ToLowerCase() const;
   ASTR     ToUpperCase() const;
-  ASTR &   LowerCase() { wcslwr(m_Str); return *this; }
-  ASTR &   UpperCase() { wcsupr(m_Str); return *this; }
+  ASTR &   LowerCase();
+  ASTR &   UpperCase();
 
+  static ASTR FromCStr(const char *s) { ASTR ret; ret.SetCStr(s); return ret; }
   ASTR &   SetCStr(const char *);
 
-  UA4     Length() const { return m_Length; }
+  UA4     Length()   const { return m_Ref->m_Length; }
+  UA4     Capacity() const { return m_Ref->m_Max;    }
   void    Reserve(UA4);
-  void    SetLength(UA4 len) { m_Length=len, *((U4*)m_Str-1)=(U4)(len<<1); }
+  void    SetLength(UA4 len);
   void    UpdateLength();
 
-  BSTR    ToBSTR() const { return SysAllocString(m_Str); }
+  BSTR    ToBSTR() const { return SysAllocString(m_Ref->m_Str); }
+  std::string ToSTL() const;
 
-  bool operator==(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)==0; }
-  bool operator!=(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)!=0; }
-  bool operator<(const WCHAR *rhs)   const { return wcscmp(m_Str, rhs)<0;  }
-  bool operator>(const WCHAR *rhs)   const { return wcscmp(m_Str, rhs)>0;  }
-  bool operator<=(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)<=0; }
-  bool operator>=(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)>=0; }
+  bool operator==(const WCHAR *rhs)  const { return wcscmp(m_Ref->m_Str, rhs)==0; }
+  bool operator!=(const WCHAR *rhs)  const { return wcscmp(m_Ref->m_Str, rhs)!=0; }
+  bool operator<(const WCHAR *rhs)   const { return wcscmp(m_Ref->m_Str, rhs)<0;  }
+  bool operator>(const WCHAR *rhs)   const { return wcscmp(m_Ref->m_Str, rhs)>0;  }
+  bool operator<=(const WCHAR *rhs)  const { return wcscmp(m_Ref->m_Str, rhs)<=0; }
+  bool operator>=(const WCHAR *rhs)  const { return wcscmp(m_Ref->m_Str, rhs)>=0; }
 
-  bool operator!() const { return m_Str[0] == 0; }
-  bool IsEmpty()   const { return m_Str[0] == 0; }
+  bool operator!() const { return m_Ref->m_Str[0] == 0; }
+  bool IsEmpty()   const { return m_Ref->m_Str[0] == 0; }
   
   ASTR & Append(const WCHAR *, UA4 len=(UA4)-1);
   ASTR & Set   (const WCHAR *, UA4 len=(UA4)-1);
@@ -137,7 +141,7 @@ class ASTR
 
   ASTR & operator=(WCHAR rhs) { return Set(rhs); }
   ASTR & operator=(const WCHAR *rhs) { return Set(rhs); }
-  ASTR & operator=(const ASTR  &rhs) { return Set(rhs, rhs.Length()); }
+  ASTR & operator=(const ASTR  &rhs);
 
   ASTR operator+(WCHAR w)        const { return ASTR(*this)+=w; }
   ASTR operator+(const WCHAR *s) const { return ASTR(*this)+=s; }
@@ -152,12 +156,47 @@ class ASTR
   static const WCHAR EmptyBSTR[1+(4/sizeof(WCHAR))];
 
   private:
-  WCHAR * m_Str;
-  UA4     m_Length, m_Max;
+  class ASTRRef
+  { public:
+    ASTRRef()    { Init(); }
+    ASTRRef(int) { m_Str=SysAllocStringLen(NULL, m_Max=64); m_Str[m_Length=0]=0; m_Refs=1; }
+    ASTRRef(BSTR, UA4, UA4);
+   ~ASTRRef()    { Free(); }
+
+    ASTRRef * Clone() { return new ASTRRef(m_Str, m_Length, m_Max); }
+
+    void AddRef()  { if(m_Refs != 0) m_Refs++; }
+    void Release() { if(m_Refs != 0 && --m_Refs == 0) delete this; }
+
+    void     Format(const WCHAR *ctl, SNP va_list);
+    void     Replace(const WCHAR *find, const WCHAR *rep, WCHAR *p, UA4 flen, UA4 rlen);
+
+    void     Append(WCHAR c);
+    void     Append(const WCHAR *, UA4 len=(UA4)-1);
+    void     Set   (const WCHAR *, UA4 len=(UA4)-1);
+    void     Set   (WCHAR c);
+    void     SetCStr(const char *);
+
+    void    Reserve(UA4);
+    void    SetLength(UA4 len) { m_Length=len, *((U4*)m_Str-1)=(U4)(len<<1); }
+    void    UpdateLength();
+
+    void    Grow(UA4);
+
+    WCHAR * m_Str;
+    UA4     m_Length, m_Max, m_Refs;
+
+    private:
+    void Init() { m_Str=(WCHAR *)ASTR::EmptyBSTR, m_Length=m_Max=m_Refs=0; }
+    void Free() { if(m_Str != ASTR::EmptyBSTR) SysFreeString(m_Str); }
+  };
   
-  void Init() { m_Str=(WCHAR *)EmptyBSTR, m_Length=m_Max=0;  }
-  void Free() { if(m_Str != EmptyBSTR) SysFreeString(m_Str); }
-  void Grow(UA4);
+  ASTRRef *m_Ref;
+  static const ASTRRef m_EmptyRef;
+  
+  void Init() { m_Ref=const_cast<ASTRRef*>(&m_EmptyRef); }
+  void CopyOnWrite();
+  void New();
 
   friend bool operator==(const WCHAR *a, const ASTR &b);
   friend bool operator!=(const WCHAR *a, const ASTR &b);
@@ -306,6 +345,7 @@ bool operator>(const VARIANT &lhs,  const AVAR &rhs) { return rhs.Cmp(lhs)<=0; }
 bool operator<=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)>0;  }
 bool operator>=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)<0;  }
 
+#ifndef AU_COMMON_NO_XML
 /* AXMLNode */
 class AXMLNodeList;
 class AXMLNode : public AComPtr<IXMLDOMNode>
@@ -354,6 +394,7 @@ class AXMLNodeList : public AComPtr<IXMLDOMNodeList>
   void Reset();
   AXMLNode Next();
 };
+#endif // !AU_COMMON_NO_XML
 
 /* ACritSec */
 class ACritSec

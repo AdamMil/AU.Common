@@ -61,13 +61,13 @@ void g_InitConfig(HINSTANCE hInst)
 
 HRESULT g_LoadConfig()
 { HRESULT hRet;
-  WCHAR   buf[MAX_PATH+64], *p;
-  if(!GetModuleFileNameW(s_DllHInst, buf, MAX_PATH)) return E_FAIL;
-  p=wcsrchr(buf, L'\\');
+  char    buf[MAX_PATH+64], *p;
+  if(!GetModuleFileName(s_DllHInst, buf, MAX_PATH)) return E_FAIL;
+  p=strrchr(buf, L'\\');
   if(!p++) return E_FAIL;
-  wcscpy(p, L"AU.Common.xml");
+  strcpy(p, "AU.Common.xml");
   if(!s_Config) CHKRET(CREATE(Config, IConfig, s_Config));
-  IFF(s_Config->OpenFile(ASTR(buf)))
+  IFF(s_Config->OpenFile(ASTR::FromCStr(buf)))
     hRet=s_Config->OpenXML(ASTR(L"<config/>"));
   return hRet;
 } /* g_LoadConfig */

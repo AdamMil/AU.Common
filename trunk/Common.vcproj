@@ -262,10 +262,18 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating documentation..."
-						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p AU.Common $(ProjectDir)\*.h $(ProjectDir)\*.cpp
-"
-						AdditionalDependencies="*.cpp *.h"
-						Outputs="documentation.html"/>
+						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp"
+						AdditionalDependencies="*.h *.cpp"
+						Outputs="$(ProjectDir)\documentation.html"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating documentation..."
+						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp"
+						AdditionalDependencies="*.h *.cpp"
+						Outputs="$(ProjectDir)\documentation.html"/>
 				</FileConfiguration>
 			</File>
 		</Filter>

@@ -21,8 +21,9 @@
 /* ~(!CATEGORIES
   INTRODUCTION=Introduction
   MODULES=AU.Common Modules
-  MODULES::DB=DB Module
-  MODULES::CONFIG=Config Module
+  MODULES::CONFIG=Config Object
+  MODULES::DB=DB Object
+  MODULES::DBMAN=DBMan Object
 )~ */
 
 // Common.cpp : Implementation of DLL Exports.

@@ -27,6 +27,34 @@
 
 // CDBMan
 
+/* ~(MODULES::DBMAN, c'DBMan
+  The DBMan object (ProgID AU.Common.DBMan) implements database connection
+  sharing. This is useful to reduce the number of connection open at a time,
+  especially when those connections are known to not be used concurrently.
+  An example is a function or ASP page that uses several COM objects that
+  each need database connectivity. If each created their own connection,
+  but the objects aren't accessed concurrently (which is generally the case),
+  that page/function might use 5 database connections when it really could be
+  using one. By using the DBMan object, those 5 connections would be pooled into
+  a single one, increasing efficiency. Even if the DB objects are being used
+  concurrently, it may not be a problem because DB is thread-safe (However, the
+  locking on the DB object may cause a performance problem if too many threads are
+  using a DB object concurrently).
+  Additionally, since the DBMan object holds a reference to the database
+  objects  and is Session-safe, it can be stored in the ASP session to prevent
+  even the overhead of opening and closing the connection on each page hit.
+  There are some additional things to be careful of when using DB objects that
+  were created by DBMan, however. Since the objects are shared, it is not a
+  good idea to alter their connection or to otherwise leave them in a state that
+  could confuse other processes (for instance, setting the LockType and not
+  resetting it [with Execute* or explicitly setting it back]). If the DB objects
+  are going to be shared among multiple threads, you should follow the rules
+  outlined in the `DB' object documentation. Additionally, you can't trust the
+  DB object's `DB::ConnSection' and `DB::ConnKey' properties to be accurate. The
+  `DB::ConnString' property should be accurate, though. The DBMan object uses
+  the "both" threading model.
+)~ */
+
 class CDB;
 
 class ATL_NO_VTABLE CDBMan : 
