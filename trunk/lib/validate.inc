@@ -19,56 +19,22 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* ~(MODULES::INC::VALIDATE, t'validate.inc
-  The validate.inc library provides validation support that will take advantage of
-  client-side javascript support if it is available. It depends on the
-  `BROWSER::browser.inc' library and the `JS::HOOKS::hooks.js' client libraries,
-  as well as the validate.js, validateIE.js, and validateNS.js files. It assumes
-  that the javsacript files are located in /js/. The validation library supports
-  multiple forms and multiple validation types per form. The basic operation is
-  that you create a Validator object for each validation set using `Validator'
-  (usually one per form), and then you add controls to it using `Validator::Add'.
-  You can call `Validator::Validate' to check the form at any time. To add the
-  appropriate client-side code, you should use `Validator::WriteCSCode' and
-  `Validator::OnSubmitCode'. The Validator object supports length checks,
-  type checks, cleaning by regex, matching by regex, range checks, and checks by
-  arbitrary javascript code.
-)~ */
-  
-  
-var _VAL_DESC,  _VAL_MAXLEN, _VAL_MINLEN, _VAL_TYPE,  _VAL_DTYPE,  _VAL_CLEAN,  _VAL_NOMATCH,
-    _VAL_NMMSG, _VAL_MATCH,  _VAL_MMSG,   _VAL_RANGE, _VAL_EXECBV, _VAL_EXECAV,
+var _VAL_DESC,  _VAL_MAXLEN, _VAL_MINLEN, _VAL_TYPE,  _VAL_CLEAN,  _VAL_NOMATCH,
+    _VAL_NMMSG, _VAL_MATCH,  _VAL_MMSG,   _VAL_RANGE, _VAL_EXECAV, _VAL_EXECBV;
 var _VAL_AttrNames, _VAL_bInit, _VAL_bWroteCS;
 
 function _VAL_Init()
-{ _VAL_DESC =0, _VAL_MAXLEN=1, _VAL_MINLEN=2, _VAL_TYPE =3,  _VAL_DTYPE =4,  _VAL_CLEAN =5, _VAL_NOMATCH=6;
-  _VAL_NMMSG=7, _VAL_MATCH =8, _VAL_MMSG  =9, _VAL_RANGE=10, _VAL_EXECBV=11, _VAL_EXECAV=12;
+{ _VAL_DESC =0, _VAL_MAXLEN=1, _VAL_MINLEN=2, _VAL_TYPE =3, _VAL_CLEAN =4,  _VAL_NOMATCH=5;
+  _VAL_NMMSG=6, _VAL_MATCH =7, _VAL_MMSG  =8, _VAL_RANGE=9, _VAL_EXECAV=10, _VAL_EXECBV =11;
 
-  _VAL_AttrNames = new Array("desc", "maxlength", "minlen", null, "dtype", "clean", "nomatch", "nmmsg",
-                             "match", "mmsg", "range", "execbv", "execav");
+  _VAL_AttrNames = new Array("desc", "maxlength", "minlen", null, "clean", "nomatch", "nmmsg", "match", "mmsg", "range", "execav", "execbv");
   _VAL_bInit     = true;
 
   if(!UA_bLoaded) UA_Init();
 }
 
-/* ~(MODULES::INC::VALIDATE, c'Validator
-  <PRE>function Validator(form_id);</PRE>
-  The Validator constructor takes the contents of the 'id' attribute of the form and
-  constructs a new Validator object. `BROWSER::browser.js' must be initialized prior
-  to calling this, or an exception will be thrown. The Validator object has the
-  following properties:
-  <PRE>
-  FormID   - a copy of the 'form_id' parameter passed to the constructor
-  Controls - an array of ControlObj objects representing added controls, in
-             the order they were added
-  CtlIndex - an array of ControlObj objects indexed by lowercase field name
-  Message  - the error message from an unsuccessful validation is stored here.
-             if no error has occurred yet, this value is null. it is not a
-             problem to write to this field.</PRE>
-)~ */
 function Validator(form_id)
-{ if(typeof(UA_bLoaded)=="undefined")
-    throw new Error(0, "UA_Init() from browser.inc must be called before this method");
+{ if(typeof(UA_bLoaded)=="undefined") throw "Error: UA_Init() from browser.inc must be called before this method";
   if(!_VAL_bInit) _VAL_Init();
 
   this.Add      = _VAL_Add;
@@ -76,7 +42,6 @@ function Validator(form_id)
   this.Validate = _VAL_Validate;
   this.Write    = _VAL_Write;
   this.Field    = _VAL_Field;
-  this.RawField = _VAL_RawField;
   this.OnSubmitCode = _VAL_OnSubmitCode;
   this.WriteCSCode  = _VAL_WriteCSCode;
 
@@ -86,208 +51,52 @@ function Validator(form_id)
   this.Message  = null;
 }
 
-/* ~(MODULES::INC::VALIDATE, c'ControlObj
-  The ControlObj object represents a single control within a Validator. Generally,
-  you will never need to use the ControlObj object directly, but it is provided for
-  advanced purposes. The ControlObj object contains the following methods: 
-  `Validate', `HTML', `Field'. In addition, it contains the following properties:
-  <PRE>
-  Parent - a reference to the parent Validator object
-  Name   - the form name of the control
-  Data   - an array containing the validation parameters for this control, in the
-           following order: desc, maxlen, minlen, type, dtype, clean, nomatch,
-           nmmsg, match, mmsg, range, execav, execbv
-  Value  - the value of the control. This is always either a string or null, unless
-           manually set to something else.
-  Typed  - the cached typed value of the control. This is recalculated if null.</PRE>
-)~ */
-function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, clean, nomatch, nmmsg,
-                         match, mmsg, range, execbv, execav)
+function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, value, clean, nomatch, nmmsg, match, mmsg, range, execav, execbv)
 { this.Validate = _VALCTL_Validate;
   this.HTML     = _VALCTL_HTML;
   this.Field    = _VALCTL_Field;
 
   this.Parent = par;
   this.Name   = name;
-  this.Data   = new Array(desc, maxlen, minlen, type, dtype, clean, nomatch, nmmsg, match, mmsg,
-                          range, execbv, execav);
+  this.Data   = new Array(desc, maxlen, minlen, type, clean, nomatch, nmmsg, match, mmsg, range, execav, execbv);
   this.Value  = value ? value : Request.Form(name)>"" ? this.Field(name) : null;
-  this.Typed  = null;
 }
 
-/* ~(MODULES::INC::VALIDATE, f'Validator::Add
-  <PRE>ControlObj Add(name, desc, maxlen, minlen, type, dtype, value, clean,
-       nomatch, nmmsg, match, mmsg, range, execbv, execav);</PRE>
-  The Validator constructor takes the contents of the 'id' attribute of the form and
-  constructs a new Validator object. `BROWSER::browser.js' must be initialized prior
-  to calling this, or an exception will be thrown. The constructor takes a large number
-  of parameters, which are described below. The only required parameter is the name.
-  'null' can be passed for any other parameter to effectively bypass it. Regexp parameters
-  are matched with the global and multi-line flags, and should contain only the regexp.
-  For instance, /a[bc]d/ would be specified as "a[bc]d". Remember to escape backslashes
-  in the regexp string as necessary!
-  <PRE>
-  name    - the name of the field in the form (the name attribute), ie "login"
-  desc    - a short, user friendly description of the field, ie "Login Name"
-  maxlen  - the maximum number of characters the raw field is allowed to be
-  minlen  - the minimum number of characters the raw field is allowed to be.
-            this can be set to 1 to make the field required, and if a
-            negative number is passed, this sets the minimum length without
-            making the field required. (ie, -5 will flag an error on lengths
-            less than 5, unless the field is empty)
-  type    - the type of the field (text, password, radio, checkbox, textarea,
-            select, etc). if not passed or null, text is assumed
-  dtype   - the data type of the field (string, int, float, date). the field
-            must be able to be converted into the given type. if not passed
-            or null, the default is "string", which essentially does no type
-            conversion
-  value   - the initial value of the control. if not passed or null, this
-            will be initialized from the current form data
-  clean   - this is a regexp which is used to clean the field data. any parts
-            of the input data that match this regexp will be replaced with ""
-            even the "raw" field data is cleaned. for instance "\D" will strip
-            all non-digits from the input
-  nomatch - the is a regexp that the field must not match. if the field matches
-            this regexp, the validation fails
-  nmmsg   - this is the message to be displayed if the 'nomatch' check fails.
-            it should be in a form that assumes the field name will be
-            prepended. for example, "cannot contain the word 'bill'.". if this
-            is not passed, a default message will be used.
-  match   - this is a regexp that the message must match.
-  mmsg    - this is the message to be displayed if the 'match' check fails. see
-            the 'nmmsg' parameter for more information
-  range   - this is a pair of numbers separated by a single space. the first
-            number should be less than or equal to the second number. the
-            validation fails if the input is not a float that is within the
-            range, inclusive. for instance, "-5 5" allows numbers from -5 to
-            5. -5 and 5 would both be okay, but anything less than -5 or more
-            than 5 would cause an error.
-  execbv  - this is a snippet of javascript code that will be executed after
-            cleaning takes place, but before any actual validation. the value
-            is assumed to be the body of a function. the function takes the
-            ControlObj as a parameter called 'ctl'. if the code returns a
-            string, validation fails with the string as the error message,
-            prepended by the field name, as always. if the code returns false,
-            validation succeeds instantly. the subsequent checks are skipped,
-            and execav is not called. any other return value (ie, true) will
-            cause validation to continue as normal
-  execav  - this is a snippet of javascript that will be executed after
-            validation. it is expected to be the body of a function that takes
-            three parameters, 'ctl', 'err', and 'msg'. 'ctl' is the current
-            control. 'err' is true if validation has failed so far, and 'msg'
-            is the error message if validation has failed so far. if the
-            code returns a string, the validation will fail with the string
-            as the error code. if the function returns false, validation
-            will succeed, regardless of whether any checks had failed.
-            any other return will have no effect.
-  </PRE>
-  Validation is performed in the following order, and if any step fails, the
-  other steps are not executed (with the exception of 'execav', which always
-  runs, unless 'execbv' returns false):
-  clean, execbv, dtype, maxlen, minlen, nomatch, match, range, execav. The Add method
-  returns the new `ControlObj' object.
-)~ */
-function _VAL_Add(name, desc, maxlen, minlen, type, dtype, value, clean, nomatch, nmmsg, match,
-                  mmsg, range, execbv, execav)
-{ if(!name) throw new Error(0, "Field must have a name!");
+function _VAL_Add(name, desc, maxlen, minlen, type, clean, value, nomatch, nmmsg, match, mmsg, range, execav, execbv)
+{ if(!name) throw "Field must have a name!";
   name = String(name).toLowerCase();
-  if(type)  type  = String(type).toLowerCase();
-  if(dtype) dtype = String(dtype).toLowerCase();
-  var ctl = new _VAL_ControlObj(this, name, desc, maxlen, minlen, type, dtype, value, clean,
-                                nomatch, nmmsg, match, mmsg, range, execbv, execav);
+  if(type) type = String(type).toLowerCase();
+  var ctl = new _VAL_ControlObj(this, name, desc, maxlen, minlen, type, value, clean, nomatch, nmmsg, match, mmsg, range, execav, execbv);
   this.Controls[this.Controls.length] = ctl;
   this.CtlIndex[name] = ctl;
   return ctl;
 }
 
-/* ~(MODULES::INC::VALIDATE, f'Validator::Control
-  <PRE>ControlObj Control(name)</PRE>
-  The Control method looks up a control by name and returns the `ControlObj' representing it.
-  If the control cannot be found, null is returned.
-)~ */
 function _VAL_Control(name)
-{ var ctl = this.CtlIndex[name.toLowerCase()];
+{ var ctl = this.CtlIndex[name];
   return ctl ? ctl : null;
 }
 
-/* ~(MODULES::INC::VALIDATE, f'Validator::Validate
-  <PRE>bool Validate()</PRE>
-  This method validates the controls in the order they were added. If any control fails
-  validation, the method immediately returns false and does not validate the other
-  controls. If all controls validate successfully, the method returns true.
-)~ */
 function _VAL_Validate()
 { var i=0, arr=this.Controls, len=arr.length;
   for(i=0; i<len; i++) if(!arr[i].Validate()) return false;
   return true;
 }
 
-/* ~(MODULES::INC::VALIDATE, f'Validator::Write
-  <PRE>string Write(name[, attr][, value])</PRE>
-  This method returns the HTML for the control specified by the given name.
-  The HTML written will depend upon the browser type and the validation
-  options set. For controls of type 'select', this writes the opening
-  select tag, but does not write any options or the closing select tag.
-  'attr' is an optional string containing additional HTML attriutes that
-  will be inserted into the HTML tag. If 'value' is passed, it will
-  be stored in the .Value property and be used in place of it when writing
-  the value of the control. Passing null will not override the .Value
-  property, as null indicates an unpassed option. To effectively nullify
-  the .Value property, you can pass an empty string. If the control does
-  not exist, a conspicuous-looking error message is returned as the HTML.
-)~ */
 function _VAL_Write(name, attr, value)
-{ var ctl = this.Control(name);
+{ var ctl = this.CtlIndex[name];
   return ctl ? ctl.HTML(attr, value) : "ERROR: Unregistered control "+name;
 }
 
-/* ~(MODULES::INC::VALIDATE, f'Validator::Field
-  <PRE>variant Field(name)</PRE>
-  This method returns the properly-typed value for the control named. An exception will
-  be thrown if the control does not exist or the control's value cannot be converted
-  to the type specified in the 'dtype' parameter to `Add'.
-)~ */
 function _VAL_Field(name)
 { ctl = this.Control(name);
-  if(!ctl) throw new Error(0, "No such control!");
-  if(ctl.Typed != null) return ctl.Typed;
-
-  var v = ctl.Value, type;
-  if((type=ctl.Data[_VAL_DTYPE]))
-  { v=_VAL_CoerceType(String(v), type);
-    if(v==null) throw new Error(1, name+" could not be converted to type '"+type+"'. name's value is: "+ctl.Value);
-  }
-  return ctl.Typed=v;
+  return ctl ? ctl.Value : "";
 }
 
-/* ~(MODULES::INC::VALIDATE, f'Validator::RawField
-  <PRE>string RawField(name)</PRE>
-  This method returns the mostly-raw value of the field. If the data came from the form, it
-  will be cleaned by the 'clean' regex passed to `Add'. The return value is always a string.
-  If the control's value is null, an empty string will be returned.
-)~ */
-function _VAL_RawField(name)
-{ ctl = this.Control(name);
-  if(!ctl) throw new Error(0, "No such control!");
-  return ctl.Value!=null ? ctl.Value : "";
-}
-
-/* ~(MODULES::INC::VALIDATE, f'Validator::OnSubmitCode
-  <PRE>string OnSubmitCode(name)</PRE>
-  This method returns a snippet of javascript that is designed to be the value of the
-  form's onsubmit attribute. For browsers that support our client-side validation,
-  some code will be written to perform that validation and abort the post if the
-  validation failed. If this is used, `WriteCSCode' should be used as well.
-)~ */
 function _VAL_OnSubmitCode()
-{ return UA_Level>=1 ? "VAL_SubmitBlur(this); return VAL_Validate(this);" : "";
+{ return UA_Level>=1 ? "return VAL_Validate(this);" : "";
 }
 
-/* ~(MODULES::INC::VALIDATE, f'Validator::WriteCSCode
-  <PRE>void WriteCSCode(name)</PRE>
-  This method writes the client-side code necessary to support this validator on the browser.
-  It should be used in a location where &lt;script&gt; blocks could safely go.
-)~ */
 function _VAL_WriteCSCode()
 { if(!this.Controls.length) return;
   if(!_VAL_bWroteCS)
@@ -340,24 +149,16 @@ function _VAL_WriteCSCode()
 
 function _VAL_Escape(v)
 { v = String(v);
-  v = v.replace(/\\/g, "\\\\");
   v = v.replace(/\"/g, "\\\"");
   v = v.replace(/\n/g, "\\n");
   v = v.replace(/\t/g, "\\t");
   return v;
 }
 
-/* ~(MODULES::INC::VALIDATE, f'ControlObj::Validate
-  <PRE>bool Validate()</PRE>
-  This method validates the control according to the rules given in `Validator::Add' and returns
-  true if the validation succeeds and false otherwise.
-)~ */
 function _VALCTL_Validate()
 { var arr = this.Data, v, len, fun, regex, err=false, msg;
 
   this.Value = this.Value ? String(this.Value) : "";
-  this.Typed = null;
-
   if((v=arr[_VAL_CLEAN]))
     this.Value = this.Value.replace(new RegExp(v, "gm"), "");
   if((v=arr[_VAL_EXECBV]))
@@ -366,8 +167,6 @@ function _VALCTL_Validate()
     if(typeof(ret)=="string") err=true, msg=ret;
     else if(ret==false) return true;
   }
-  if(!err && (v=arr[_VAL_DTYPE]) && v != "string" && _VAL_CoerceType(this.Value, v)==null)
-    err=true, msg="cannot be converted to a "+v;
   if(!err && (v=arr[_VAL_MAXLEN]) && this.Value.length>v)
     err=true, msg="must be at most "+v+" characters.";
   if(!err && (v=arr[_VAL_MINLEN]))
@@ -395,24 +194,18 @@ function _VALCTL_Validate()
     if(val<parseFloat(v[0]) || val>parseFloat(v[1]))
       err=true, msg = "is outside of expected range ("+v[0]+" to "+v[1]+").";
   }
-  if((v=arr[_VAL_EXECAV]))
-  { fun = new Function("ctl", "err", "msg", v);
-    ret = fun(this, err, msg);
-    if(typeof(ret)=="string") err=true, msg=ret;
-    else if(ret==false) return true;
-  }
   if(err)
   { v = this.Data[_VAL_DESC];
     this.Parent.Message = (v ? v : this.Name)+' '+msg;
     return false;
   }
+  else if((v=arr[_VAL_EXECAV]))
+  { fun = new Function("ctl", v);
+    fun(this);
+  }
   return true;
 }
 
-/* ~(MODULES::INC::VALIDATE, f'ControlObj::HTML
-  <PRE>string HTML([attr][, value])</PRE>
-  This method returns the HTML for the control as described in `Validator::Write'.
-)~ */
 function _VALCTL_HTML(attr, value)
 { var type = this.Data[_VAL_TYPE], ret;
 
@@ -442,7 +235,7 @@ function _VALCTL_HTML(attr, value)
   if(attr) { ret += ' '; ret+=attr; }
 
   if(type != "password")
-  { if(value) { this.Value=String(value); this.Typed=null; }
+  { if(value) this.Value = value;
     if(this.Value)
     { if(type=="textbox")
       { ret += '>'; ret += this.Value; ret += "</textbox>";
@@ -460,11 +253,6 @@ function _VALCTL_HTML(attr, value)
   else return ret += "/>";
 }
 
-/* ~(MODULES::INC::VALIDATE, f'ControlObj::Field
-  <PRE>string Field()</PRE>
-  This method returns the string value from the form data, cleaned if necessary.
-  If the field was not submitted, an empty string is returned.
-)~ */
 function _VALCTL_Field()
 { var v=Request.Form(this.Name);
   if(v>"")
@@ -476,22 +264,5 @@ function _VALCTL_Field()
     return v;
   }
   else return "";
-}
-
-function _VAL_CoerceType(val, type)
-{ if(type==null || type=="string") return val;
-  if(type=="int")
-  { val=parseInt(val);
-    return isNaN(val) ? null : val;
-  }
-  if(type=="float")
-  { val=parseFloat(val);
-    return isNaN(val) ? null : val;
-  }
-  if(type=="date")
-  { try { val=new Date(val); } catch(e) { return null; }
-    return val;
-  }
-  throw new Error(0, "Unknown type "+type);
 }
 </script>
