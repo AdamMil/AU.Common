@@ -27,119 +27,104 @@ VARIANT g_vMissing; // initialized in DllMain (Common.cpp)
 /*** ASTRList implementation ***/
 UA4 ASTRList::Add(const WCHAR *s, UA4 len)
 { UA4   ret  = (UA4)m_Vec.size();
-  m_Vec.push_back(ASTR(s));
+  ASTR  str;
+  str.Set(str, len);
+  m_Vec.push_back(str);
   return ret;
 } /* Add */
 
 UA4 ASTRList::Add(ASTR &s)
 { UA4   ret  = (UA4)m_Vec.size();
-  ASTR *pstr = new ASTR(s);
-  m_Vec.push_back(pstr);
+  m_Vec.push_back(s);
   return ret;
 } /* Add */
-
-void ASTRList::Clear()
-{ UA4 i, len = Length();
-  for(i=0; i<len; i++) delete m_Vec[i];
-  m_Vec.clear();
-} /* Clear */
 
 ASTR ASTRList::Join(const WCHAR *s) const
 { ASTR ret;
   UA4  i, len = Length(), total, slen;
   if(len == 0) return ret;
   slen = (UA4)wcslen(s), total = slen*(len-1);
-  for(i=0; i<len; i++) total += m_Vec[i]->Length();
+  for(i=0; i<len; i++) total += m_Vec[i].Length();
   ret.Reserve(total);
-  for(i=0; i<len; i++) ret += *m_Vec[i];
+  for(i=0; i<len; i++) ret += m_Vec[i];
   return ret;
 } /* Join */
 
 /*** ASTR implementation ***/
 ASTR & ASTR::Attach(BSTR str)
-{ Free();
+{ m_Ref->Release();
   if(str)
-  { m_Length = m_Max = (UA4)SysStringLen(str);
-    m_Str    = str;
+  { New();
+    m_Ref->m_Length = m_Ref->m_Max = (UA4)SysStringLen(str);
+    m_Ref->m_Str    = str;
   }
   else Init();
   return *this;
 } /* Attach */
 
 BSTR ASTR::Detach()
-{ BSTR ret=m_Str;
-  Init();
-  if(ret==EmptyBSTR) ret = SysAllocString(m_Str);
+{ BSTR ret;
+  if(m_Ref->m_Str==EmptyBSTR) ret = SysAllocString(m_Ref->m_Str);
+  else
+  { CopyOnWrite();
+    ret = m_Ref->m_Str;
+    Init();
+  }
   return ret;
 } /* Detach */
 
 void ASTR::Clear()
-{ Free();
+{ m_Ref->Release();
   Init();
 } /* Clear */
 
 ASTR & ASTR::Format(const WCHAR *ctl, ...)
-{ SNP va_list list;
-  UA4   len;
-  WCHAR buf[4096];
+{ New();
+  SNP va_list list;
   va_start(list, ctl);
-  len = (UA4)vswprintf(buf, ctl, list);
+  m_Ref->Format(ctl, list);
   va_end(list);
-  Set(buf, len);
   return *this;
 } /* Format(const WCHAR *, ...) */
 
 ASTR & ASTR::Format(const WCHAR *ctl, SNP va_list list)
-{ UA4     len;
-  WCHAR   buf[4096];
-  len = (UA4)vswprintf(buf, ctl, list);
-  Set(buf, len);
+{ New();
+  m_Ref->Format(ctl, list);
   return *this;
 } /* Format(const WCHAR *, std::va_list) */
 
 ASTR & ASTR::Replace(const WCHAR *find, const WCHAR *rep)
 { assert(find && rep);
-  UA4 flen=(UA4)wcslen(find), rlen=(UA4)wcslen(rep), rbytes=rlen*sizeof(WCHAR);
+  UA4 flen=(UA4)wcslen(find), rlen=(UA4)wcslen(rep);
   if(flen==0) return *this;
-  WCHAR *p=wcsstr(m_Str, find);
+  WCHAR *q=m_Ref->m_Str, *p=wcsstr(m_Ref->m_Str, find);
   if(!p) return *this;
 
+  CopyOnWrite();
+  p = m_Ref->m_Str+(p-q);
   if(flen < rlen)
   { ASTR tmp;
-    WCHAR *q=m_Str;
     do
     { tmp.Append(q, (UA4)(p-q));
       tmp.Append(rep, rlen);
     } while((p=wcsstr(q=p+flen, find)) != NULL);
-    if(q-m_Str != m_Length) tmp.Append(q, m_Length-(q-m_Str));
+    if(q-m_Ref->m_Str != m_Ref->m_Length) tmp.Append(q, m_Ref->m_Length-(q-m_Ref->m_Str));
     Attach(tmp.Detach());
   }
-  else if(flen > rlen)
-  { WCHAR *q;
-    UA4    diff=flen-rlen, dbytes=diff*sizeof(WCHAR), nrem=0;
-    do
-    { nrem += diff;
-      memcpy(p, rep, rbytes);
-      q = wcsstr(p+=flen, find);
-      memmove(p+rlen, p, (q==NULL ? m_Str+m_Length-p : q-p)*sizeof(WCHAR));
-    } while((p=q) != NULL);
-    m_Str[m_Length-nrem]=0;
-    SetLength(m_Length-nrem);
-  }
-  else do memcpy(p, rep, rbytes); while((p=wcsstr(p+=flen, find)) != NULL);
+  else m_Ref->Replace(find, rep, p, flen, rlen);
   return *this;
-} /* Replace */
+}
 
 ASTR ASTR::Substring(IA4 start, IA4 end) const
 { ASTR ret;
-  if(start<0) start += m_Length; // negative indexes become index from end
-  if(end<0)   end   += m_Length;
+  if(start<0) start += Length(); // negative indexes become index from end
+  if(end<0)   end   += Length();
 
   UA4 s=(UA4)start, e=(UA4)end;
-  if(s > e || s >= m_Length) return ret;
-  if(e >= m_Length) e = m_Length-1;
+  if(s > e || s >= Length()) return ret;
+  if(e >= Length()) e = Length()-1;
 
-  ret.Set(m_Str+s, e-s+1);
+  ret.Set(m_Ref->m_Str+s, e-s+1);
   return ret;
 } /* Substring */
 
@@ -148,20 +133,20 @@ ASTRList ASTR::Split(const WCHAR *sep) const
   ASTRList list;
   if(!sep[0])
   { WCHAR c;
-    for(UA4 i=0; i<m_Length; i++)
-    { c=m_Str[i];
+    for(UA4 i=0,len=Length(); i<len; i++)
+    { c=m_Ref->m_Str[i];
       list.Add(&c, 1);
     }
   }
   else
   { ASTR   tmp;
-    WCHAR *p, *q=m_Str;
+    WCHAR *p, *q=m_Ref->m_Str;
     UA4    slen=(UA4)wcslen(sep);
     while(p=wcsstr(q, sep))
     { list.Add(tmp.Set(q, (UA4)(p-q)));
       q=p+slen;
     }
-    tmp.Set(q, (UA4)(m_Str+m_Length-q)).Length();
+    tmp.Set(q, (UA4)(m_Ref->m_Str+Length()-q));
     list.Add(tmp);
   }
   return list;
@@ -175,32 +160,53 @@ ASTR ASTR::ToUpperCase() const
 { return ASTR(*this).UpperCase();
 } /* ToUpperCase */
 
-ASTR & ASTR::SetCStr(const char *s)
-{ UA4 len = (UA4)strlen(s);
-  if(len>m_Max) Grow(len);
-  MultiByteToWideChar(CP_ACP, 0, s, (int)len, m_Str, (int)m_Max);
-  m_Str[len]=0;
+ASTR & ASTR::LowerCase()
+{ CopyOnWrite();
+  wcslwr(m_Ref->m_Str);
   return *this;
-} /* SetCStr */
+} /* LowerCase */
+
+ASTR & ASTR::UpperCase()
+{ CopyOnWrite();
+  wcsupr(m_Ref->m_Str);
+  return *this;
+} /* LowerCase */
+
+ASTR & ASTR::SetCStr(const char *s)
+{ New();
+  m_Ref->SetCStr(s);
+  return *this;
+}
 
 void ASTR::Reserve(UA4 len)
-{ if(m_Max<len)
-  { Free();
-    if(m_Max==0) m_Max=64;
-    while(m_Max<len) m_Max *= 2;
-    m_Str = SysAllocStringLen(NULL, m_Max);
-    m_Str[0] = 0;
-  }
-  SetLength(0);
+{ New();
+  m_Ref->Reserve(len);
 } /* Reserve */
 
+void ASTR::SetLength(UA4 len)
+{ CopyOnWrite();
+  m_Ref->SetLength(len);
+} /* SetLength */
+
 void ASTR::UpdateLength()
-{ SetLength(m_Str==NULL ? 0 : (UA4)wcslen(m_Str));
+{ CopyOnWrite();
+  m_Ref->UpdateLength();
 } /* UpdateLength */
 
+std::string ASTR::ToSTL() const
+{ std::string ret;
+  UA4   len = Length();
+  char *buf = new char[len+1];
+  WideCharToMultiByte(CP_ACP, 0, m_Ref->m_Str, len, buf, len, NULL, NULL);
+  buf[len] = 0;
+  ret = buf;
+  delete[] buf;
+  return ret;
+} /* ToSTL */
+
 ASTR & ASTR::operator+=(WCHAR c)
-{ if(m_Length==m_Max) Grow(m_Max+Max(m_Max/4, (UA4)64));
-  m_Str[m_Length++]=c, m_Str[m_Length]=0;
+{ CopyOnWrite();
+  m_Ref->Append(c);
   return *this;
 } /* operator+=(WCHAR) */
 
@@ -215,35 +221,132 @@ ASTR ASTR::FormatNew(const WCHAR *ctl, ...)
 
 ASTR & ASTR::Append(const WCHAR *s, UA4 len)
 { assert(s != NULL);
-  if(len==(UA4)-1) len=(UA4)wcslen(s);
-  UA4 nlen = m_Length+len;
-
-  if(nlen > m_Max) Grow(nlen);
-  SNP wcscat(m_Str+m_Length, s);
-  SetLength(nlen);
+  CopyOnWrite();
+  m_Ref->Append(s, len);
   return *this;
 } /* Append */
 
 ASTR & ASTR::Set(const WCHAR *s, UA4 len)
-{ assert(s != NULL);
+{ New();
+  m_Ref->Set(s, len);
+  return *this;
+} /* Set(const WCHAR *, UA4) */
+
+ASTR & ASTR::Set(WCHAR c)
+{ New();
+  m_Ref->Set(c);
+  return *this;
+} /* Set(WCHAR c) */
+
+ASTR & ASTR::operator=(const ASTR &rhs)
+{ m_Ref->Release();
+  (m_Ref=rhs.m_Ref)->AddRef();
+  return *this;
+} /* operator= */
+
+void ASTR::CopyOnWrite()
+{ if(m_Ref->m_Refs != 1)
+  { ASTRRef *r = m_Ref;
+    m_Ref = r->Clone();
+    r->Release();
+  }
+} /* CopyOnWrite */
+
+void ASTR::New()
+{ if(m_Ref->m_Refs != 1)
+  { m_Ref->Release();
+    m_Ref = new ASTRRef(0);
+  }
+} /* New */
+
+/*** ASTR::ASTRRef implementation ***/
+ASTR::ASTRRef::ASTRRef(BSTR s, UA4 l, UA4 m)
+{ m_Str=s, m_Length=l, m_Max=m, m_Refs=1;
+} /* ASTRRef(BSTR, UA4, UA4) */
+
+void ASTR::ASTRRef::Format(const WCHAR *ctl, SNP va_list list)
+{ UA4     len;
+  WCHAR   buf[4096];
+  len = (UA4)vswprintf(buf, ctl, list);
+  Set(buf, len);
+} /* Format */
+
+void ASTR::ASTRRef::Replace(const WCHAR *find, const WCHAR *rep, WCHAR *p, UA4 flen, UA4 rlen)
+{ assert(m_Refs==1);
+  UA4 rbytes=rlen*sizeof(WCHAR);
+  if(flen > rlen)
+  { WCHAR *q;
+    UA4    diff=flen-rlen, dbytes=diff*sizeof(WCHAR), nrem=0;
+    do
+    { nrem += diff;
+      memcpy(p, rep, rbytes);
+      q = wcsstr(p+=flen, find);
+      memmove(p+rlen, p, (q==NULL ? m_Str+m_Length-p : q-p)*sizeof(WCHAR));
+    } while((p=q) != NULL);
+    m_Str[m_Length-nrem]=0;
+    SetLength(m_Length-nrem);
+  }
+  else do memcpy(p, rep, rbytes); while((p=wcsstr(p+=flen, find)) != NULL);
+} /* Replace */
+
+void ASTR::ASTRRef::SetCStr(const char *s)
+{ assert(m_Refs==1);
+  UA4 len = (UA4)strlen(s);
+  if(len>m_Max) Grow(len);
+  MultiByteToWideChar(CP_ACP, 0, s, (int)len, m_Str, (int)m_Max);
+  m_Str[len]=0;
+} /* SetCStr */
+
+void ASTR::ASTRRef::Reserve(UA4 len)
+{ assert(m_Refs==1);
+  if(m_Max<len)
+  { Free();
+    if(m_Max==0) m_Max=64;
+    while(m_Max<len) m_Max *= 2;
+    m_Str = SysAllocStringLen(NULL, m_Max);
+    m_Str[0] = 0;
+  }
+  SetLength(0);
+} /* Reserve */
+
+void ASTR::ASTRRef::UpdateLength()
+{ SetLength(m_Str==NULL ? 0 : (UA4)wcslen(m_Str));
+} /* UpdateLength */
+
+void ASTR::ASTRRef::Append(WCHAR c)
+{ if(m_Length==m_Max) Grow(m_Max+Max(m_Max/4, (UA4)64));
+  m_Str[m_Length++]=c, m_Str[m_Length]=0;
+} /* Append(WCHAR) */
+
+void ASTR::ASTRRef::Append(const WCHAR *s, UA4 len)
+{ assert(m_Refs==1);
+  if(len==(UA4)-1) len=(UA4)wcslen(s);
+  UA4 nlen = m_Length+len;
+  if(nlen > m_Max) Grow(nlen);
+  SNP wcscat(m_Str+m_Length, s);
+  SetLength(nlen);
+} /* Append(const WCHAR *, UA4) */
+
+void ASTR::ASTRRef::Set(const WCHAR *s, UA4 len)
+{ assert(m_Refs==1);
   if(len==(UA4)-1) len=(UA4)wcslen(s);
   if(len>m_Max) Reserve(len);
   SNP memcpy(m_Str, s, len*sizeof(WCHAR));
   m_Str[len]=0;
   SetLength(len);
-  return *this;
 } /* Set(const WCHAR *, UA4) */
 
-ASTR & ASTR::Set(WCHAR c)
-{ if(m_Max<1) Reserve(1);
+void ASTR::ASTRRef::Set(WCHAR c)
+{ assert(m_Refs==1);
+  if(m_Max<1) Reserve(1);
   m_Str[0] = c;
   m_Str[1] = 0;
   SetLength(1);
-  return *this;
 } /* Set(WCHAR) */
 
-void ASTR::Grow(UA4 len)
-{ if(m_Max==0) m_Max=64;
+void ASTR::ASTRRef::Grow(UA4 len)
+{ assert(m_Refs==1);
+  if(m_Max==0) m_Max=64;
   while(m_Max<len) m_Max *= 2;
   
   WCHAR *tmp = SysAllocStringLen(NULL, m_Max);
@@ -253,6 +356,7 @@ void ASTR::Grow(UA4 len)
 } /* Grow */
 
 const WCHAR ASTR::EmptyBSTR[1+(4/sizeof(WCHAR))] = {0, 0, 0};
+const ASTR::ASTRRef ASTR::m_EmptyRef;
 
 /*** AVAR implementation ***/
 void AVAR::Attach(const VARIANT &ov)
@@ -317,6 +421,7 @@ AVAR & AVAR::operator=(const VARIANT &rhs)
   return *this;
 } /* operator= */
 
+#ifndef AU_COMMON_NO_XML
 /*** AXMLNode implementation ***/
 AXMLNode AXMLNode::FirstChild() const
 { assert(p != NULL);
@@ -382,7 +487,8 @@ ASTR AXMLNode::Attr(BSTR attr) const
   HRESULT  hRet;
   IFS(p->get_attributes(&attrs))
     IFS(attrs->getNamedItem(attr, &node))
-      return node.Text();
+      if(node != NULL)
+        return node.Text();
   return ASTR();
 } /* Attr */
   
@@ -431,4 +537,4 @@ AXMLNode AXMLNodeList::Next()
   p->nextNode(&node);
   return node;
 } /* Next */
-
+#endif // !AU_COMMON_NO_XML

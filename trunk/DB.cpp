@@ -501,7 +501,7 @@ STDMETHODIMP CDB::Output(BSTR sParam, VARIANT *pvOut)
   
   var.vt=VT_BSTR, var.bstrVal=sParam;
   CHKRET(m_Cmd->get_Parameters(&parms));
-  CHKRET(parms->get_Item(var, &parm))
+  CHKRET(parms->get_Item(var, &parm));
   return parm->get_Value(pvOut);
 } /* get_Output */
 
@@ -633,7 +633,10 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   HRESULT    hRet;
   VARTYPE    vt;
   
-  for(li=0; li<list.Length(); li++) if(list[li][0]==L'@' || list[li][0]==L'+') nvars++;
+  for(li=0; li<list.Length(); li++)
+  { if(list[li].Length()<2) return E_INVALIDARG;
+    if(list[li][0]==L'@' || list[li][0]==L'+') nvars++;
+  }
   if(nvars && (!array || array->rgsabound[0].cElements != nvars)) return E_INVALIDARG;
 
   CHKRET(m_Cmd->get_Parameters(&parms));
@@ -646,8 +649,7 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   for(li=vi=0; li<list.Length(); li++)
   { ASTR &s = list[li], name = (WCHAR*)s+1, fc=s[0];
     if(fc==L'@' || fc==L'+')
-    { 
-      pvar = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
+    { pvar = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
       size = (vt==VT_BSTR ? SysStringLen(pvar->bstrVal) : 1);
       if(vt > VT_UINT) return E_INVALIDARG;
       type = m_dbTypes[vt];
@@ -660,9 +662,10 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
       if(p2 != pc)   type=_wtol(pc);
       if(p2 != NULL) size=_wtol(p2+1);
     }
+    else if(fc==L'-') return E_INVALIDARG;
     CHKRET(m_Cmd->CreateParameter(name, (DataTypeEnum)type,
                                   fc==L'@' ? adParamInput : fc==L'+' ? adParamInputOutput : adParamOutput,
-                                  size, *pvar, &parm));
+                                  size, pvar ? *pvar : g_vMissing, &parm));
     CHKRET(parms->Append(parm));
     parm.Release();
   }

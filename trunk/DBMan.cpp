@@ -27,7 +27,7 @@
 // CDBMan
 
 CDBMan::CDBMan()
-{ m_MaxShares = 8;
+{ m_MaxShares = 5;
 } /* CDBMan */
 
 CDBMan::~CDBMan()
@@ -38,6 +38,17 @@ CDBMan::~CDBMan()
   }
 } /* ~CDBMan */
 
+/* ~(MODULES::DBMAN, p'DBMan::MaxSharing
+  <PRE>
+  [propget] HRESULT MaxSharing([out,retval] long *pnShares);
+  [propput] HRESULT MaxSharing([in] long nShares);</PRE>
+  The MaxSharing property sets the maximum number of times that a DB object can be shared.
+  This is not an exact measure of the number of shares, as it uses the current reference
+  count minus one to estimate sharing. The property defaults to 5. Setting the property
+  to 1 disables connection sharing, but this is not recommended as the overhead of DBMan
+  will lower performance below that of just creating DB objects manually. The effect of
+  setting this to 0 is not yet defined.
+)~ */
 STDMETHODIMP CDBMan::get_MaxSharing(long *pnShares)
 { if(!pnShares) return E_POINTER;
   AComLock lock(this);
@@ -52,6 +63,13 @@ STDMETHODIMP CDBMan::put_MaxSharing(long nShares)
   return S_OK;
 } /* put_MaxSharing */
 
+/* ~(MODULES::DBMAN, f'DBMan::CreateDB
+  <PRE>HRESULT CreateDB([in,defaultvalue("")] BSTR sKey, [in,defaultvalue("")] BSTR sSect, [out,retval] IDB *ppDB);</PRE>
+  The CreateDB method takes a section and key from the configuration and uses it
+  to look up an ADO connection string. 'sKey' defaults to "DB/Default" and 'sSect'
+  defaults to "", the Default section. After looking up the connection string,
+  CreateDB calls `CreateDBRaw', passing the connection string.
+)~ */
 STDMETHODIMP CDBMan::CreateDB(BSTR sKey, BSTR sSect, IDB **ppDB)
 { assert(sKey && sSect);
   AComLock lock(this);
@@ -61,13 +79,19 @@ STDMETHODIMP CDBMan::CreateDB(BSTR sKey, BSTR sSect, IDB **ppDB)
   return CreateDBRaw(var.ToBSTR(), ppDB);
 } /* CreateDB */
 
+/* ~(MODULES::DBMAN, f'DBMan::CreateDBRaw
+  <PRE>HRESULT CreateDBRaw([in] BSTR sConnStr, [out,retval] IDB *ppDB);</PRE>
+  The CreateDBRaw method takes an ADO connection string and returns a `DB' object
+  that is connected to that data source.
+)~ */
 STDMETHODIMP CDBMan::CreateDBRaw(BSTR sConnStr, IDB **ppDB)
 { if(!sConnStr || !ppDB) return E_POINTER;
   if(!sConnStr[0]) return E_INVALIDARG;
   
   AComPtr<IDB> db;
   HRESULT      hRet;
-  if(m_MaxShares<2)
+
+  if(m_MaxShares==0)
   { CHKRET(CREATE(DB, IDB, db));
     db->put_ConnString(sConnStr);
     db.CopyTo(ppDB);
@@ -76,7 +100,7 @@ STDMETHODIMP CDBMan::CreateDBRaw(BSTR sConnStr, IDB **ppDB)
 
   AComLock lock(this);
   DBList      *list;
-  UA4          i, len;
+  IA4          i;
  
   DBMap::iterator it = m_Map.find(sConnStr);
   if(it == m_Map.end())
@@ -85,15 +109,16 @@ STDMETHODIMP CDBMan::CreateDBRaw(BSTR sConnStr, IDB **ppDB)
   }
   else list = (*it).second;
 
-  for(i=0,len=(UA4)list->size(); i<len; i++)
+  for(i=(IA4)list->size()-1; i>=0; i--)
   { CDB *cdb = list->operator[]((int)i);
     if((UA4)cdb->m_dwRef-1 < m_MaxShares)
     { db = cdb;
       break;
     }
   }
-  if(i == len)
+  if(i<0)
   { CHKRET(CREATE(DB, IDB, db));
+    db.p->AddRef();
     list->push_back((CDB*)(IDB*)db);
     db->put_ConnString(sConnStr);
   }

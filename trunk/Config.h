@@ -30,13 +30,14 @@
 
 /* ~(MODULES::CONFIG, c'Config
   The Config object (ProgID AU.Common.Config) provides a method to easily access
-  configuration information. The information is stored as XML (using `Schema')
+  configuration information. The information is stored as XML (see `Schema')
   with the ability to embed type information. The Config object organizes data
   into Sections. Each section contains Keys, which hold the actual data. If a
   section doesn't have a particular key, the Config object will fall back to
   trying a section called "Default", where the default key values should be
   placed. First, Open*() should be called to open the configuration. Then,
-  the other methods can be used.
+  the other methods can be used. The Config object uses the "both" threading
+  model.
 )~ */
 
 /* ~(MODULES::CONFIG, t'Config::Schema
@@ -59,8 +60,10 @@
   
   An explanation of the types:
   string - the value is considered to be a string. The Text property of the XML
-           node is used to retrieve the value
+           node is used to retrieve the value. This is the default type, if the
+           type is not specified.
   int    - the value is a 32-bit signed integer
+  bool   - the value is a boolean, either 0/1 or true/false
   date   - the value is a date, with an optional time. The format can be
            mm/dd/yyyy hh:mm:ss, or any value that can be converted to a date
            by the system routines.
@@ -82,18 +85,21 @@
   <config>
     <Default>
       <DB>
-        <Default type="string">CONNSTR1</Default>
-        <fe_server type="string">CONNSTR2</fe_server>
-        <be_server type="string">CONNSTR3</be_server>
+        <Default>CONNSTR1</Default>
+        <fe_server>CONNSTR2</fe_server>
+        <be_server>CONNSTR3</be_server>
       </DB>
-      <website type="string">www.mysite.com</website>
+      <website>www.mysite.com</website>
+      <doom_day type="date">5/5/2005</doom_day>
+      <random_bugs type="bool">0</random_bugs>
     </Default>
 
     <WebSite1>
       <DB>
-        <be_server type="string">CONNSTR4</be_server>
+        <be_server>CONNSTR4</be_server>
       </DB>
-      <website type="string">www.yoursite.com</website>
+      <website>www.yoursite.com</website>
+      <random_bugs type="bool">True</random_bugs>
     </WebSite1>
   </config>
   </PRE>
