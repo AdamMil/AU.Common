@@ -63,22 +63,26 @@ class ASTR
   ASTR(const WCHAR *s) { Init(); Set(s); }
   ASTR(const ASTR &s)  { Init(); Set(s); }
   ASTR(UA4 len) { Init(); Reserve(len);  }
+ ~ASTR() { SysFreeString(m_Str);         }
 
   operator WCHAR *()             { return m_Str; }
   operator const WCHAR *() const { return m_Str; }
 
   ASTR &  Attach(BSTR str);
   BSTR    Detach();
+  void    Clear();
 
-  UA4     Length() const { return m_Length; }
   ASTR &  Format(const WCHAR *ctl, ...);
   ASTR &  Format(const WCHAR *ctl, std::va_list);
-
   ASTR &  Replace(const WCHAR *find, const WCHAR *rep);
+  ASTR &  Substr(UA4 start) { return Substr(start, m_Length); }
+  ASTR &  Substr(UA4 start, UA4 end);
 
+  UA4     Length() const { return m_Length; }
   void    Reserve(UA4);
   void    SetLength(UA4 len) { *((U4*)m_Str-1) = (U4)(len<<1); }
   void    UpdateLength();
+
   BSTR    ToBSTR() const { return SysAllocString(m_Str); }
 
   bool operator==(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)==0; }
@@ -178,8 +182,8 @@ class AComPtr
     }
   }
 
-  void Attach(T *p2) { if(p) p->Release(); p=p2;   }
-  T * Detach()       { T* pt=p; p=NULL; return pt; }
+  void Attach(T *p2)  { if(p) p->Release(); p=p2;   }
+  T *  Detach()       { T* pt=p; p=NULL; return pt; }
 
   template<typename Q>
   void CopyTo(Q **o)
@@ -223,6 +227,7 @@ class AVAR
   
   void    Clear() { VariantClear(&v); }
   bool    IsEmpty() const { return v.vt==VT_EMPTY; }
+  VARTYPE Type()    const { return v.vt;           }
 
   void    Attach(const VARIANT &ov);
   VARIANT Detach();
@@ -231,7 +236,10 @@ class AVAR
   
   HRESULT ChangeType(VARTYPE type);
   HRESULT ChangeCopy(VARTYPE type, AVAR &out) const;
+  BSTR    ToBSTR() const { assert(v.vt==VT_BSTR); return v.bstrVal; }
   
+  void    SetI4(I4 i) { Clear(); v.vt=VT_I4, v.intVal=i; }
+
   int Cmp(const VARIANT &rhs) const;
 
   VARIANT * operator&() { assert(v.vt==VT_EMPTY); return &v; }
@@ -266,6 +274,8 @@ class AXMLNode : public AComPtr<IXMLDOMNode>
   AXMLNode(Node *op) : Base(op) { }
   AXMLNode(Base &op) : Base(op) { }
 
+  AXMLNode & operator=(Node *op) { Base::operator=(op); return *this; }
+
   AXMLNode FirstChild() const;
   AXMLNode LastChild() const;
   AXMLNode NextSibling() const;
@@ -291,11 +301,41 @@ class AXMLNodeList : public AComPtr<IXMLDOMNodeList>
   AXMLNodeList(List *op) : Base(op) { }
   AXMLNodeList(Base &op) : Base(op) { }
 
+  AXMLNodeList & operator=(List *op) { Base::operator=(op); return *this; }
+
   UA4 Length();
   AXMLNode Item(UA4 index);
   
   void Reset();
   AXMLNode Next();
 };
+
+class ACritSec
+{ public:
+  ACritSec() { InitializeCriticalSection(&m_CS); }
+ ~ACritSec() { DeleteCriticalSection(&m_CS);     }
+ 
+  void Lock()   { EnterCriticalSection(&m_CS); }
+  void Unlock() { LeaveCriticalSection(&m_CS); }
+
+  private:
+  CRITICAL_SECTION m_CS;  
+};
+
+class AAutoLock
+{ public:
+  AAutoLock(ACritSec &cs, bool bLocked=false) : m_CS(cs) { m_bLocked=bLocked; }
+ ~AAutoLock() { if(m_bLocked) Unlock(); }
+
+  void Lock()   { assert(!m_bLocked); m_CS.Lock();   m_bLocked=true;  }
+  void Unlock() { assert(m_bLocked);  m_CS.Unlock(); m_bLocked=false; }
+
+  private:
+  ACritSec &m_CS;
+  bool      m_bLocked;
+};
+
+// defined in Helpers.cpp
+extern VARIANT g_vMissing;
 
 #endif

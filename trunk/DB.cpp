@@ -90,7 +90,7 @@ STDMETHODIMP CDB::put_Timeout(long newVal)
 	return S_OK;
 } /* put_Timeout */
 
-STDMETHODIMP CDB::get_Connection(_Connection **pVal)
+STDMETHODIMP CDB::get_Connection(ADOConnection **pVal)
 { HRESULT hRet;
   if(!pVal)    return E_POINTER;
   if(!m_bInit) CHKRET(Init());
@@ -98,7 +98,7 @@ STDMETHODIMP CDB::get_Connection(_Connection **pVal)
   return S_OK;
 } /* get_Connection */
 
-STDMETHODIMP CDB::get_Command(_Command **pVal)
+STDMETHODIMP CDB::get_Command(ADOCommand **pVal)
 { HRESULT hRet;
   if(!pVal)    return E_POINTER;
   if(!m_bInit) CHKRET(Init());
@@ -133,7 +133,7 @@ STDMETHODIMP CDB::UnlockDB()
   return S_OK;
 } /* UnlockDB */
 
-STDMETHODIMP CDB::NewCommand(_Command **pVal)
+STDMETHODIMP CDB::NewCommand(ADOCommand **pVal)
 { if(!pVal) return E_POINTER;
   AComPtr<ADOCommand> cmd;
   HRESULT hRet;
@@ -189,7 +189,27 @@ STDMETHODIMP CDB::ExecuteNMNR(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals)
 } /* ExecuteNMNR */
 
 HRESULT CDB::Init()
-{
+{ HRESULT hRet=S_OK;
+  if(m_Conn==NULL) CHKRET(CREATE(CADOConnection, IADOConnection, m_Conn));
+  if(m_Cmd ==NULL)
+  { CHKRET(CREATE(CADOCommand, IADOCommand, m_Cmd));
+    m_Cmd->put_CommandTimeout(m_nTimeout);
+  }
+  
+  long state;
+  CHKRET(m_Conn->get_State(&state));
+  if(state == adStateClosed)
+  { AVAR var;
+    CHKRET(g_Config(m_ConnKey.IsEmpty() ? ASTR(L"Default") : m_ConnKey, ASTR(L"string"), m_ConnSect, var));
+    CHKRET(m_Conn->Open(var.ToBSTR(), NULL, NULL, -1));
+
+    var.Clear();
+    CHKRET(IQUERY(m_Conn, IDispatch, &var.v.pdispVal))
+    var.v.vt = VT_DISPATCH;
+    hRet = m_Cmd->put_ActiveConnection(var);
+  }
+  m_bInit = SUCCEEDED(hRet);
+  return hRet;
 } /* Init */
 
 HRESULT CDB::StartExecute(BSTR sSQL)
@@ -211,7 +231,7 @@ HRESULT CDB::DoExecute(ADORecordset **pRet)
   CHKRET(IQUERY(m_Cmd, IDispatch, &var.pdispVal));
 
   rs->put_CursorLocation(adUseClient);
-  hRet = rs->Open(var, vtMissing, (CursorTypeEnum)m_CursorType, (LockTypeEnum)m_LockType, -1);
+  hRet = rs->Open(var, g_vMissing, (CursorTypeEnum)m_CursorType, (LockTypeEnum)m_LockType, -1);
   if(SUCCEEDED(hRet) && m_LockType==adLockReadOnly && (m_CursorType==adOpenForwardOnly || m_CursorType==adOpenStatic))
     rs->putref_ActiveConnection(NULL);
   VariantClear(&var);
@@ -225,3 +245,63 @@ void CDB::ResetDefaults()
   m_LockType   = adLockReadOnly;
   put_Timeout(30);
 } /* ResetDefaults */
+
+HRESULT CDB::FillParams(SAFEARRAY **aVals)
+{ AComPtr<ADOParameters> parms;
+  AComPtr<ADOParameter>  parm;
+  AVAR       var;
+  SAFEARRAY *array = aVals && *aVals ? *aVals : NULL;
+  HRESULT    hRet;
+  
+  CHKRET(m_Cmd->get_Parameters(&parms));
+  if(array == NULL || FAILED(hRet=parms->Refresh()))
+  { long len=0;
+    parms->get_Count(&len);
+    var.SetI4(0);
+    while(len--) parms->Delete(var);
+    if(array == NULL) return S_FALSE;
+  }
+
+  VARIANT *vars = (VARIANT*)array->pvData;
+  long vi, nvars = array->rgsabound[0].cElements, nparms=0;
+
+  if(SUCCEEDED(hRet)) // Refresh() succeeded
+  { ParameterDirectionEnum e;
+    parms->get_Count(&nparms);
+    var.SetI4(0);
+    for(vi=0; vi<nvars && var.v.intVal<nparms; var.v.intVal++)
+    { CHKRET(parms->get_Item(var, &parm));
+      parm->get_Direction(&e);
+      if(e&1) parm->put_Value(vars[vi++]); // e&1 is nonzero if it's an input parameter
+      parm.Release();
+    }
+  }
+  else
+  { static DataTypeEnum dbTypes[VT_UINT] =
+    { adEmpty,   adVarChar,   adSmallInt, adInteger, adSingle,  adDouble,   adCurrency, adDate,
+      adVarChar, adIDispatch, adError,    adBoolean, adVariant, adIUnknown, adDecimal,  adTinyInt,
+      adUnsignedTinyInt, adUnsignedSmallInt, adUnsignedInt, adBigInt, adUnsignedBigInt, adInteger,
+      adUnsignedInt
+    };
+    VARIANT *pvar;
+    long     size, type;
+    VARTYPE  vt;
+    
+    for(vi=0; vi<nvars; vi++)
+    { pvar  = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
+      if(vt > VT_UINT) return E_INVALIDARG;
+      type = dbTypes[vt];
+      if(vt & VT_ARRAY) type &= 0x2000;
+      size = (vt==VT_BSTR ? SysStringLen(pvar->bstrVal) : 1);
+
+      CHKRET(m_Cmd->CreateParameter((BSTR)ASTR::EmptyBSTR, (DataTypeEnum)type, adParamInput, size, *pvar, &parm));
+      CHKRET(parms->Append(parm));
+      parm.Release();
+    }      
+  }
+  return hRet;
+} /* FillParams */
+
+HRESULT CDB::FillParamsNM(BSTR sParms, SAFEARRAY **aVals)
+{ 
+} /* FillParamsNM */
