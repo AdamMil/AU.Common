@@ -273,6 +273,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="VarArray.cpp">
+			</File>
+			<File
 				RelativePath="stdafx.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -332,6 +335,9 @@
 			</File>
 			<File
 				RelativePath="Utils.h">
+			</File>
+			<File
+				RelativePath="VarArray.h">
 			</File>
 			<File
 				RelativePath="stdafx.h">
@@ -398,6 +404,9 @@
 			</File>
 			<File
 				RelativePath="Utility.rgs">
+			</File>
+			<File
+				RelativePath="VarArray.rgs">
 			</File>
 		</Filter>
 		<Filter

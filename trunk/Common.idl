@@ -85,6 +85,7 @@ library AU_CommonLib
     [propget,id(7)]  HRESULT Connection([out,retval] _Connection **ppConn);
     [propget,id(8)]  HRESULT Command([out,retval] _Command **ppCmd);
     [propget,id(9)]  HRESULT IsOpen([out,retval] VARIANT_BOOL *pbOpen);
+    [propput,id(10)] HRESULT ParmArray([in] VARIANT vParms);
 
     [id(20)] HRESULT Open();
     [id(21)] HRESULT Close();
@@ -129,6 +130,8 @@ library AU_CommonLib
   ]
   interface IUtility : IDispatch
   {
+    [propget,id(1)]  HRESULT MissingVar([out,retval] VARIANT *pvOut);
+
     [id(10)] HRESULT StringToBin([in] BSTR sStr, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] VARIANT *pvOut);
     [id(11)] HRESULT BinToString([in] VARIANT vBin, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] BSTR *psRet);
     [id(12)] HRESULT HexToBin([in] BSTR sHex, [out,retval] VARIANT *pvOut);
@@ -246,6 +249,26 @@ library AU_CommonLib
     [id(21)] HRESULT UnlockMan();
   };
 
+  /* IVarArray */
+  [
+	  object,
+	  uuid(980906F5-A686-40B4-A3CE-6E5E6E8AD5CC),
+	  dual,
+	  nonextensible,
+	  helpstring("IVarArray Interface"),
+	  pointer_default(unique)
+  ]
+  interface IVarArray : IDispatch
+  {
+    [propget,id(0)] HRESULT Item([in] long nIndex, [out,retval] VARIANT *pvOut);
+    [propget,id(1)] HRESULT Size([out,retval] long *pnEls);
+    [propget,id(2)] HRESULT Capacity([out,retval] long *pnEls);
+    [propput,id(2)] HRESULT Capacity([in] long nEls);
+    [propget,id(3)] HRESULT Array([out,retval] VARIANT *pvOut);
+    
+    [id(10)] HRESULT Add([in] VARIANT vEl);
+  };
+
 
   /* Config class */
   [
@@ -326,5 +349,15 @@ library AU_CommonLib
 	coclass AUSession
 	{
 		[default] interface IAUSession;
+	};
+
+  /* VarArray */
+	[
+		uuid(B31065DA-8CD3-4A97-91D6-B6933105BFD8),
+		helpstring("VarArray Class")
+	]
+	coclass VarArray
+	{
+		[default] interface IVarArray;
 	};
 };

@@ -57,6 +57,7 @@ public:
   DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 public:
+  STDMETHODIMP get_MissingVar(/*[out,retval]*/ VARIANT *pvOut);
   STDMETHODIMP StringToBin(/*[in]*/ BSTR sStr, /*[in,defaultvalue(-1)]*/ VARIANT_BOOL b8bit, /*[out,retval]*/ VARIANT *pvOut);
   STDMETHODIMP BinToString(/*[in]*/ VARIANT vBin, /*[in,defaultvalue(-1)]*/ VARIANT_BOOL b8bit, /*[out,retval]*/ BSTR *psRet);
   STDMETHODIMP HexToBin(/*[in]*/ BSTR sHex, /*[out,retval]*/ VARIANT *pvOut);
