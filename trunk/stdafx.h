@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in Web development.
+   controls and C++ classes used to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or

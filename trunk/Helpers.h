@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in COM and Web development.
+   controls and C++ classes used to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or
@@ -71,6 +71,7 @@ class ASTRList
 { public:
  ~ASTRList() { Clear(); }
  
+  UA4  Add(const WCHAR *, UA4 len);
   UA4  Add(ASTR &);
   void Clear();
   UA4  Length() const { return (UA4)m_Vec.size(); }
@@ -86,10 +87,10 @@ class ASTRList
 /* ASTR */
 class ASTR
 { public:
-  ASTR() { Init(); }
+  ASTR()               { Init(); }
+  ASTR(WCHAR c)        { Init(); Set(c); }
   ASTR(const WCHAR *s) { Init(); Set(s); }
   ASTR(const ASTR &s)  { Init(); Set(s); }
-  ASTR(UA4 len) { Init(); Reserve(len);  }
  ~ASTR() { SysFreeString(m_Str);         }
 
   operator WCHAR *()             { return m_Str; }
@@ -130,8 +131,13 @@ class ASTR
   bool operator!() const { return m_Str[0] == 0; }
   bool IsEmpty()   const { return m_Str[0] == 0; }
   
-  ASTR & operator=(const WCHAR *rhs) { Set(rhs); return *this; }
-  ASTR & operator=(const ASTR  &rhs) { Set(rhs, rhs.Length()); return *this; }
+  ASTR & Append(const WCHAR *, UA4 len=(UA4)-1);
+  ASTR & Set   (const WCHAR *, UA4 len=(UA4)-1);
+  ASTR & Set   (WCHAR c);
+
+  ASTR & operator=(WCHAR rhs) { return Set(rhs); }
+  ASTR & operator=(const WCHAR *rhs) { return Set(rhs); }
+  ASTR & operator=(const ASTR  &rhs) { return Set(rhs, rhs.Length()); }
 
   ASTR operator+(WCHAR w)        const { return ASTR(*this)+=w; }
   ASTR operator+(const WCHAR *s) const { return ASTR(*this)+=s; }
@@ -150,8 +156,6 @@ class ASTR
   UA4     m_Length, m_Max;
   
   void Init() { m_Str=(WCHAR *)EmptyBSTR, m_Length=m_Max=0; }
-  void Append(const WCHAR *, UA4 len=(UA4)-1);
-  void Set   (const WCHAR *, UA4 len=(UA4)-1);
   void Grow(UA4);
 
   friend bool operator==(const WCHAR *a, const ASTR &b);
@@ -302,6 +306,7 @@ bool operator<=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)>0;  }
 bool operator>=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)<0;  }
 
 /* AXMLNode */
+class AXMLNodeList;
 class AXMLNode : public AComPtr<IXMLDOMNode>
 { protected:
   typedef IXMLDOMNode Node;
@@ -320,8 +325,8 @@ class AXMLNode : public AComPtr<IXMLDOMNode>
   AXMLNode PrevSibling() const;
   AXMLNode SelectSingleNode(BSTR path) const;
 
-  IXMLDOMNodeList * ChildNodes() const;
-  IXMLDOMNodeList * SelectNodes(BSTR path) const;
+  AXMLNodeList ChildNodes() const;
+  AXMLNodeList SelectNodes(BSTR path) const;
   
   ASTR     NodeName() const;
   ASTR     Attr(BSTR attr) const;
