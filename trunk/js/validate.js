@@ -280,8 +280,8 @@ function VAL_ValidateField(fld)
     if(typeof(ret)=="string") err=true, msg=ret;
     else if(ret==false) return true;
   }
-  if(!err && (v=_VAL_GetAttr(fld, "dtype")) && _VAL_CoerceType(fld.value, v)==null)
-    err=true, msg="is not a valid "+v+". Its value is:\n"+fld.value;
+  if(!err && (v=_VAL_GetAttr(fld, "dtype")) && v!="string" && fld.value>"" && _VAL_CoerceType(fld.value, v)==null)
+    err=true, msg="cannot be converted to a"+v;
   if(!err && (v=_VAL_GetAttr(fld, "maxlength")) && fld.value.length>v)
     err=true, msg="must be at most "+v+" characters.";
   if(!err && (v=_VAL_GetAttr(fld, "minlen")))
