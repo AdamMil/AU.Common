@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in COM and Web development.
+   controls and C++ classes used to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or
@@ -25,6 +25,14 @@
 VARIANT g_vMissing; // initialized in DllMain (Common.cpp)
 
 /*** ASTRList implementation ***/
+UA4 ASTRList::Add(const WCHAR *s, UA4 len)
+{ UA4   ret  = (UA4)m_Vec.size();
+  ASTR *pstr = new ASTR;
+  pstr->Set(s, len);
+  m_Vec.push_back(pstr);
+  return ret;
+} /* Add */
+
 UA4 ASTRList::Add(ASTR &s)
 { UA4   ret  = (UA4)m_Vec.size();
   ASTR *pstr = new ASTR(s);
@@ -137,6 +145,29 @@ ASTR ASTR::Substring(IA4 start, IA4 end) const
   return ret;
 } /* Substring */
 
+ASTRList ASTR::Split(const WCHAR *sep) const
+{ assert(sep);
+  ASTRList list;
+  if(!sep[0])
+  { WCHAR c;
+    for(UA4 i=0; i<m_Length; i++)
+    { c=m_Str[i];
+      list.Add(&c, 1);
+    }
+  }
+  else
+  { ASTR   tmp;
+    WCHAR *p, *q=m_Str;
+    UA4    slen=(UA4)wcslen(sep);
+    while(p=wcsstr(q, sep))
+    { list.Add(tmp.Set(q, (p-q)));
+      q+=slen;
+    }
+    if(tmp.Set(q, (p-q)).Length()) tmp.Add(tmp);
+  }
+  return list;
+} /* Split */
+
 ASTR ASTR::ToLowerCase() const
 { return ASTR(*this).LowerCase();
 } /* ToLowerCase */
@@ -159,7 +190,9 @@ void ASTR::Reserve(UA4 len)
     if(m_Max==0) m_Max=64;
     while(m_Max<len) m_Max *= 2;
     m_Str = SysAllocStringLen(NULL, m_Max);
+    m_Str[0] = 0;
   }
+  SetLength(0);
 } /* Reserve */
 
 void ASTR::UpdateLength()
@@ -181,7 +214,7 @@ ASTR ASTR::FormatNew(const WCHAR *ctl, ...)
   return tmp;
 } /* FormatNew */
 
-void ASTR::Append(const WCHAR *s, UA4 len)
+ASTR & ASTR::Append(const WCHAR *s, UA4 len)
 { assert(s != NULL);
   if(len==(UA4)-1) len=(UA4)wcslen(s);
   UA4 nlen = m_Length+len;
@@ -189,16 +222,26 @@ void ASTR::Append(const WCHAR *s, UA4 len)
   if(nlen > m_Max) Grow(nlen);
   SNP wcscat(m_Str+m_Length, s);
   SetLength(nlen);
+  return *this;
 } /* Append */
 
-void ASTR::Set(const WCHAR *s, UA4 len)
+ASTR & ASTR::Set(const WCHAR *s, UA4 len)
 { assert(s != NULL);
   if(len==(UA4)-1) len=(UA4)wcslen(s);
   if(len>m_Max) Reserve(len);
   SNP memcpy(m_Str, s, len*sizeof(WCHAR));
   m_Str[len]=0;
   SetLength(len);
-} /* Set */
+  return *this;
+} /* Set(const WCHAR *, UA4) */
+
+ASTR & ASTR::Set(WCHAR c)
+{ if(m_Max<1) Reserve(1);
+  m_Str[0] = c;
+  m_Str[1] = 0;
+  SetLength(1);
+  return *this;
+} /* Set(WCHAR) */
 
 void ASTR::Grow(UA4 len)
 { if(m_Max==0) m_Max=64;
@@ -311,18 +354,18 @@ AXMLNode AXMLNode::SelectSingleNode(BSTR path) const
   return AXMLNode(pnode);
 } /* SelectSingleNode */
 
-IXMLDOMNodeList * AXMLNode::ChildNodes() const
+AXMLNodeList AXMLNode::ChildNodes() const
 { assert(p != NULL);
   IXMLDOMNodeList *plist=NULL;
   p->get_childNodes(&plist);
-  return plist;
+  return AXMLNodeList(plist);
 } /* ChildNodes */
 
-IXMLDOMNodeList * AXMLNode::SelectNodes(BSTR path) const
+AXMLNodeList AXMLNode::SelectNodes(BSTR path) const
 { assert(p != NULL);
   IXMLDOMNodeList *plist=NULL;
   p->selectNodes(path, &plist);
-  return plist;
+  return AXMLNodeList(plist);
 } /* SelectNodes */
 
 ASTR AXMLNode::NodeName() const

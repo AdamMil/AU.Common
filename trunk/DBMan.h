@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in Web development.
+   controls and C++ classes used to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or
@@ -34,16 +34,13 @@ class ATL_NO_VTABLE CDBMan :
 	public IDispatchImpl<IDBMan, &IID_IDBMan, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
-DECLARE_REGISTRY_RESOURCEID(IDR_DBMAN)
-DECLARE_NOT_AGGREGATABLE(CDBMan)
-
-BEGIN_COM_MAP(CDBMan)
-	COM_INTERFACE_ENTRY(IDBMan)
-	COM_INTERFACE_ENTRY(IDispatch)
-	COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
-END_COM_MAP()
-
-
+  DECLARE_REGISTRY_RESOURCEID(IDR_DBMAN)
+  DECLARE_NOT_AGGREGATABLE(CDBMan)
+  BEGIN_COM_MAP(CDBMan)
+    COM_INTERFACE_ENTRY(IDBMan)
+    COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+  END_COM_MAP()
 	DECLARE_PROTECT_FINAL_CONSTRUCT()
 	DECLARE_GET_CONTROLLING_UNKNOWN()
 
@@ -57,7 +54,13 @@ END_COM_MAP()
 	CComPtr<IUnknown> m_pUnkMarshaler;
 
 public:
+  // IDBMan
+  STDMETHODIMP get_MaxSharing(/*[out,retval]*/ long *pnShares);
+  STDMETHODIMP put_MaxSharing(/*[in]*/ long nShares);
+  STDMETHODIMP CreateDB(/*[in,defaultvalue("")]*/ BSTR sKey, /*[in,defaultvalue("")]*/ BSTR sSect, /*[out,retval]*/ IDB **ppDB);
+  STDMETHODIMP CreateDBRaw(/*[in]*/ BSTR sConnStr, /*[out,retval]*/ IDB **ppDB);
 
+  UA4 m_MaxShares;
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(DBMan), CDBMan)

@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in Web development.
+   controls and C++ classes used to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or
@@ -18,10 +18,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* ~(CATEGORIES
+/* ~(!CATEGORIES
   INTRODUCTION=Introduction
   MODULES=AU.Common Modules
   MODULES::DB=DB Module
+  MODULES::CONFIG=Config Module
 )~ */
 
 // Common.cpp : Implementation of DLL Exports.

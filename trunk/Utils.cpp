@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in Web development.
+   controls and C++ classes used to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or
@@ -24,7 +24,6 @@
 
 /*** statics ***/
 AComPtr<IConfig> s_Config;
-ACritSec         s_ConfigCS;
 
 /*** rs fields ***/
 HRESULT g_GetField(ADORecordset *rs, UA4 nField, VARIANT *out)
@@ -47,15 +46,13 @@ HRESULT g_GetField(ADORecordset *rs, VARIANT vField, VARIANT *out)
 
 /*** config ***/
 HRESULT g_InitConfig(const WCHAR *sPath)
-{ AAutoLock lock(s_ConfigCS);
-  HRESULT   hRet;
+{ HRESULT   hRet;
   if(!s_Config) CHKRET(CREATE(Config, IConfig, s_Config));
   return s_Config->OpenFile(ASTR(sPath));
 } /* g_InitConfig */
 
 HRESULT g_Config(BSTR sKey, BSTR sType, BSTR sSection, AVAR &out)
 { if(!s_Config) return E_UNEXPECTED;
-  AAutoLock lock(s_ConfigCS);
   out.Clear();
   return s_Config->get_Item(sKey, sType, sSection, &out);
 } /* g_Config */
