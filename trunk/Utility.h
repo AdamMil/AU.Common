@@ -20,21 +20,21 @@
   be stored in an ASP session or application.
 )~ */
 class ATL_NO_VTABLE CUtility : 
-	public CComObjectRootEx<CComSingleThreadModel>,
-	public CComCoClass<CUtility, &CLSID_Utility>,
-	public IDispatchImpl<IUtility, &IID_IUtility, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
+  public CComObjectRootEx<CComSingleThreadModel>,
+  public CComCoClass<CUtility, &CLSID_Utility>,
+  public IDispatchImpl<IUtility, &IID_IUtility, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
-	CUtility();
+  CUtility();
  ~CUtility();
 
   DECLARE_REGISTRY_RESOURCEID(IDR_UTILITY)
   DECLARE_NOT_AGGREGATABLE(CUtility)
   BEGIN_COM_MAP(CUtility)
-	  COM_INTERFACE_ENTRY(IUtility)
-	  COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(IUtility)
+    COM_INTERFACE_ENTRY(IDispatch)
   END_COM_MAP()
-	DECLARE_PROTECT_FINAL_CONSTRUCT()
+  DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 public:
   STDMETHODIMP StringToBin(/*[in]*/ BSTR sStr, /*[in,defaultvalue(-1)]*/ VARIANT_BOOL b8bit, /*[out,retval]*/ VARIANT *pvOut);

@@ -28,9 +28,9 @@ import "oaidl.idl";
 import "ocidl.idl";
 
 [
-	uuid(A553E0A6-F9C3-48C3-98B0-4827C7417E74),
-	version(1.0),
-	helpstring("AU.Common 1.0")
+  uuid(A553E0A6-F9C3-48C3-98B0-4827C7417E74),
+  version(1.0),
+  helpstring("AU.Common 1.0")
 ]
 library AU_CommonLib
 {
@@ -119,12 +119,12 @@ library AU_CommonLib
 
   /* IUtility */
   [
-	  object,
-	  uuid(68A4D01C-884B-45AB-B085-ACF5E3B50363),
-	  dual,
-	  nonextensible,
-	  helpstring("IUtility Interface"),
-	  pointer_default(unique)
+    object,
+    uuid(68A4D01C-884B-45AB-B085-ACF5E3B50363),
+    dual,
+    nonextensible,
+    helpstring("IUtility Interface"),
+    pointer_default(unique)
   ]
   interface IUtility : IDispatch
   {
@@ -145,40 +145,40 @@ library AU_CommonLib
 
   /* IUpFile */
   [
-	  object,
-	  uuid(F17B4312-842F-4ACE-85C5-1653A1E859C0),
-	  dual,
-	  nonextensible,
-	  helpstring("IUpFile Interface"),
-	  pointer_default(unique)
+    object,
+    uuid(F17B4312-842F-4ACE-85C5-1653A1E859C0),
+    dual,
+    nonextensible,
+    helpstring("IUpFile Interface"),
+    pointer_default(unique)
   ]
   interface IUpFile : IDispatch
   {
-		[propget,id(1)] HRESULT FormName([out,retval] BSTR *psName);
-		[propget,id(2)] HRESULT Filename([out,retval] BSTR *psName);
-		[propget,id(3)] HRESULT Length([out,retval] long *pnLen);
-		[propget,id(4)] HRESULT MimeType([out,retval] BSTR *psType);
-		[propget,id(5)] HRESULT Attribute([in] BSTR sAttr, [out,retval] BSTR *psVal);
-		[propget,id(6)] HRESULT Data([out,retval] VARIANT *pvData);
-		[id(7)] HRESULT Save([in] BSTR sPath, [in,defaultvalue(0)] VARIANT_BOOL bCanClobber);
+  	[propget,id(1)] HRESULT FormName([out,retval] BSTR *psName);
+  	[propget,id(2)] HRESULT Filename([out,retval] BSTR *psName);
+  	[propget,id(3)] HRESULT Length([out,retval] long *pnLen);
+  	[propget,id(4)] HRESULT MimeType([out,retval] BSTR *psType);
+  	[propget,id(5)] HRESULT Attribute([in] BSTR sAttr, [out,retval] BSTR *psVal);
+  	[propget,id(6)] HRESULT Data([out,retval] VARIANT *pvData);
+  	[id(7)] HRESULT Save([in] BSTR sPath, [in,defaultvalue(0)] VARIANT_BOOL bCanClobber);
   };
 
   /* IUpload */
   [
-	  object,
-	  uuid(918C90B0-DB9C-4C4B-A0B6-D04DE41A70D2),
-	  dual,
-	  nonextensible,
-	  helpstring("IUpload Interface"),
-	  pointer_default(unique)
+    object,
+    uuid(918C90B0-DB9C-4C4B-A0B6-D04DE41A70D2),
+    dual,
+    nonextensible,
+    helpstring("IUpload Interface"),
+    pointer_default(unique)
   ]
   interface IUpload : IDispatch
   {
-		[propget,id(0)] HRESULT Form([in] BSTR sItem, [out,retval] VARIANT *pvOut);
-		[propget,id(1)] HRESULT File([in] BSTR sItem, [out,retval] IUpFile **ppFile);
-		[propget,id(2)] HRESULT NumFiles([out,retval] long *pnFiles);
-		[id(10)] HRESULT GetFile([in] long nIndex, [out,retval] IUpFile **ppFile);
-		[id(20),hidden] HRESULT OnStartPage([in] IDispatch *pDisp);
+  	[propget,id(0)] HRESULT Form([in] BSTR sItem, [out,retval] VARIANT *pvOut);
+  	[propget,id(1)] HRESULT File([in] BSTR sItem, [out,retval] IUpFile **ppFile);
+  	[propget,id(2)] HRESULT NumFiles([out,retval] long *pnFiles);
+  	[id(10)] HRESULT GetFile([in] long nIndex, [out,retval] IUpFile **ppFile);
+  	[id(20),hidden] HRESULT OnStartPage([in] IDispatch *pDisp);
   };
 
 
@@ -213,32 +213,32 @@ library AU_CommonLib
   };
 
   /* Utility class */
-	[
-		uuid(72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B),
-		helpstring("Utility Class")
-	]
-	coclass Utility
-	{
-		[default] interface IUtility;
-	};
-	
-	/* Upload class */
-	[
-		uuid(BC8072FD-3D1A-4576-B88B-A6A694740589),
-		helpstring("Upload Class")
-	]
-	coclass Upload
-	{
-		[default] interface IUpload;
-	};
+  [
+  	uuid(72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B),
+  	helpstring("Utility Class")
+  ]
+  coclass Utility
+  {
+  	[default] interface IUtility;
+  };
+  
+  /* Upload class */
+  [
+  	uuid(BC8072FD-3D1A-4576-B88B-A6A694740589),
+  	helpstring("Upload Class")
+  ]
+  coclass Upload
+  {
+  	[default] interface IUpload;
+  };
 
   /* UpFile class */
-	[
-		uuid(CB789D8D-7291-4D7F-AD4C-C423319E4403),
-		helpstring("UpFile Class")
-	]
-	coclass UpFile
-	{
-		[default] interface IUpFile;
-	};
+  [
+  	uuid(CB789D8D-7291-4D7F-AD4C-C423319E4403),
+  	helpstring("UpFile Class")
+  ]
+  coclass UpFile
+  {
+  	[default] interface IUpFile;
+  };
 };

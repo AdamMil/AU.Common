@@ -36,8 +36,8 @@
 class CCommonModule : public CAtlDllModuleT< CCommonModule >
 {
 public :
-	DECLARE_LIBID(LIBID_AU_CommonLib)
-	DECLARE_REGISTRY_APPID_RESOURCEID(IDR_COMMON, "{4BFCDF23-2787-401A-BF17-25B14E84E38F}")
+  DECLARE_LIBID(LIBID_AU_CommonLib)
+  DECLARE_REGISTRY_APPID_RESOURCEID(IDR_COMMON, "{4BFCDF23-2787-401A-BF17-25B14E84E38F}")
 };
 
 CCommonModule _AtlModule;
@@ -74,13 +74,13 @@ STDAPI DllRegisterServer(void)
 {
     // registers object, typelib and all interfaces in typelib
     HRESULT hr = _AtlModule.DllRegisterServer();
-	return hr;
+  return hr;
 }
 
 
 // DllUnregisterServer - Removes entries from the system registry
 STDAPI DllUnregisterServer(void)
 {
-	HRESULT hr = _AtlModule.DllUnregisterServer();
-	return hr;
+  HRESULT hr = _AtlModule.DllUnregisterServer();
+  return hr;
 }

@@ -110,9 +110,9 @@
 )~ */
 
 class ATL_NO_VTABLE CConfig : 
-	public CComObjectRootEx<CComMultiThreadModel>,
-	public CComCoClass<CConfig, &CLSID_Config>,
-	public IDispatchImpl<IConfig, &IID_IConfig, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
+  public CComObjectRootEx<CComMultiThreadModel>,
+  public CComCoClass<CConfig, &CLSID_Config>,
+  public IDispatchImpl<IConfig, &IID_IConfig, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
   DECLARE_REGISTRY_RESOURCEID(IDR_CONFIG)
@@ -125,15 +125,15 @@ public:
   DECLARE_PROTECT_FINAL_CONSTRUCT()
   DECLARE_GET_CONTROLLING_UNKNOWN()
 
-	HRESULT FinalConstruct()
-	{ return CoCreateFreeThreadedMarshaler(GetControllingUnknown(), &m_pUnkMarshaler.p);
-	}
+  HRESULT FinalConstruct()
+  { return CoCreateFreeThreadedMarshaler(GetControllingUnknown(), &m_pUnkMarshaler.p);
+  }
 
-	void FinalRelease()
-	{ m_pUnkMarshaler.Release();
-	}
+  void FinalRelease()
+  { m_pUnkMarshaler.Release();
+  }
 
-	CComPtr<IUnknown> m_pUnkMarshaler;
+  CComPtr<IUnknown> m_pUnkMarshaler;
 
 public:
   // IConfig

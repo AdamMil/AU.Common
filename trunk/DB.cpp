@@ -178,7 +178,7 @@ STDMETHODIMP CDB::put_Timeout(long nTimeout)
   AComLock lock(this);
   m_nTimeout = (UA4)nTimeout;
   if(m_Cmd) return m_Cmd->put_CommandTimeout(nTimeout);
-	return S_OK;
+  return S_OK;
 } /* put_Timeout */
 
 /* ~(MODULES::DB, p'DB::Connection
@@ -221,7 +221,7 @@ STDMETHODIMP CDB::get_IsOpen(VARIANT_BOOL *pbOpen)
 { if(!pbOpen) return E_POINTER;
   AComLock lock(this);
   *pbOpen = m_bInit ? VBTRUE : VBFALSE;
-	return S_OK;
+  return S_OK;
 } /* get_IsOpen */
 
 /* ~(MODULES::DB, f'DB::Open
