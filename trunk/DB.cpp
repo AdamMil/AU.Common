@@ -41,13 +41,16 @@ CDB::~CDB()
   [propput] HRESULT ConnSection([in] BSTR sSect);</PRE>
   The ConnSection property sets the `Config' Section used to retrieve the ADO connection string.
   The combination of the ConnSection and ConnKey properties determines what ADO connection string
-  will be used, unless `ConnString' is set.
-  If the DB object is open when this property is changed, it will first be closed.
-  The ConnSection defaults to "Default".
+  will be used, unless `ConnString' is set. If the DB object is open when this property is changed,
+  it will first be closed. Internally, ConnSection defaults to the default section, unless an
+  ASP Application string variable exists with the name "AU.Common.DB.DefaultSection", in which case
+  that will be used as the default ConnSection. If you really want ConnSection to use the "Default"
+  section, explicitly set it to "Default".
 )~ */
 STDMETHODIMP CDB::get_ConnSection(BSTR *psSect)
 { if(!psSect) return E_POINTER;
   AComLock lock(this);
+  MaybeGetSection();
   *psSect = m_ConnSect.IsEmpty() ? SysAllocString(L"Default") : m_ConnSect.ToBSTR();
   return S_OK;
 } /* get_ConnSection */
@@ -545,7 +548,8 @@ HRESULT CDB::Init()
     AVAR var;
     
     if(m_ConnStr==NULL)
-    { if(!m_ConnKey.IsEmpty())
+    { MaybeGetSection();
+      if(!m_ConnKey.IsEmpty())
         IFS(g_Config(m_ConnKey, ASTR(L"string"), m_ConnSect, var)) connstr=var.Detach().bstrVal;
       if(connstr==NULL)
       { IFS(g_Config(ASTR(L"DB/Default"), L"string", m_ConnSect, var)) connstr=var.Detach().bstrVal;
@@ -713,6 +717,14 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   }
   return hRet;
 } /* FillParamsO */
+
+void CDB::MaybeGetSection()
+{ AVAR var;
+  if(m_ConnSect.IsEmpty() && SUCCEEDED(g_ASPAppVar(L"AU.Common.DB.DefaultSection", &var)))
+  { if(var.Type()==VT_BSTR) m_ConnSect = var.v.bstrVal;
+    else var.Clear();
+  }
+} /* MaybeGetSection */
 
 const DataTypeEnum CDB::m_dbTypes[VT_UINT] =
 { adEmpty,   adInteger,   adSmallInt, adInteger, adSingle,  adDouble,   adCurrency, adDate,

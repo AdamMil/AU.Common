@@ -67,14 +67,22 @@ STDMETHODIMP CDBMan::put_MaxSharing(long nShares)
   <PRE>HRESULT CreateDB([in,defaultvalue("")] BSTR sKey, [in,defaultvalue("")] BSTR sSect, [out,retval] IDB *ppDB);</PRE>
   The CreateDB method takes a section and key from the configuration and uses it
   to look up an ADO connection string. 'sKey' defaults to "DB/Default" and 'sSect'
-  defaults to "", the Default section. After looking up the connection string,
-  CreateDB calls `CreateDBRaw', passing the connection string.
+  defaults to "", the Default section. However, if 'sSect' is "", CreateDB() will
+  first attempt to grab a string variable from an ASP Application variable called
+  "AU.Common.DB.DefaultSection". If found, it will be used as the section. If you
+  really want CreateDB to use the default section, then pass "Default" for 'sSect'.
+  After looking up the connection string, CreateDB calls `CreateDBRaw', passing
+  the connection string.
 )~ */
 STDMETHODIMP CDBMan::CreateDB(BSTR sKey, BSTR sSect, IDB **ppDB)
 { assert(sKey && sSect);
   AComLock lock(this);
   AVAR     var;
   HRESULT  hRet;
+  if((sSect==NULL || !sSect[0]) && SUCCEEDED(g_ASPAppVar(L"AU.Common.DB.DefaultSection", &var)))
+  { if(var.Type()==VT_BSTR) sSect = var.v.bstrVal;
+    else var.Clear();
+  }
   CHKRET(g_Config(sKey[0] ? sKey : ASTR(L"DB/Default"), ASTR(L"string"), sSect, var));
   return CreateDBRaw(var.ToBSTR(), ppDB);
 } /* CreateDB */

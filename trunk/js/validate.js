@@ -244,7 +244,7 @@ function VAL_FormatDate(fld, desc, req)
   This method returns true if the field passed is empty, disabled, or invisible.
 )~ */
 function VAL_IsMissing(fld)
-{ return fld.value.length==0 || VAL_Disabled(fld) || !VAL_Visible(fld));
+{ return fld.value.length==0 || VAL_Disabled(fld) || !VAL_Visible(fld);
 }
 
 /* ~(MODULES::JS::VALIDATE, f'VAL_Require
@@ -395,5 +395,5 @@ function _VAL_CoerceType(val, type) // assumes 'val' is a string
 }
 
 function _VAL_InitForm(frm)
-{ WRITE ME
+{ alert("_VAL_InitForm not implemented");
 }

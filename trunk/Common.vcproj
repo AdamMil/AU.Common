@@ -338,6 +338,32 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="Client Script"
+			Filter="">
+			<File
+				RelativePath="js\hooks.js">
+			</File>
+			<File
+				RelativePath="js\validate.js">
+			</File>
+			<File
+				RelativePath="js\validateIE.js">
+			</File>
+			<File
+				RelativePath="js\validateNS.js">
+			</File>
+		</Filter>
+		<Filter
+			Name="Server Script"
+			Filter="">
+			<File
+				RelativePath="lib\browser.inc">
+			</File>
+			<File
+				RelativePath="lib\validate.inc">
+			</File>
+		</Filter>
+		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File

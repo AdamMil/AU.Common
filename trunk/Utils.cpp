@@ -135,7 +135,7 @@ HRESULT g_DBCheckType(VARIANT *pv, bool alter)
 } /* g_DBCheckType */
 
 /*** session/application access ***/
-HRESULT g_SessVar(BSTR sKey, VARIANT *pvout, bool statics=true)
+HRESULT g_SessVar(BSTR sKey, VARIANT *pvout, bool statics)
 { HRESULT hRet = g_ASPSessVar(sKey, pvout, statics);
   if(FAILED(hRet) || pvout->vt==VT_EMPTY) hRet = g_AUSessVar(sKey, pvout);
   return hRet;
@@ -147,7 +147,7 @@ HRESULT g_AUSessVar(BSTR sKey, VARIANT *pvout)
 
   AComPtr<ISessionMan> sm;
   AComPtr<IAUSession>  sess;
-  MVAR    var;
+  AVAR    var;
   HRESULT hRet;
   
   pvout->vt=VT_EMPTY;
