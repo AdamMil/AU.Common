@@ -21,29 +21,6 @@
 
 var UA_Agent="Unknown", UA_Browser=UA_Agent, UA_Maker=UA_Agent, UA_Version=0, UA_Level=0, UA_bLoaded=false;
 
-/* ~(MODULES::INC::BROWSER, t'browser.inc
-  <PRE>function UA_Init();</PRE>
-  The browser module consists of a single function, UA_Init(). Calling this
-  sets several global variables:
-  <PRE>
-  UA_Agent   - the complete user agent string
-  UA_Browser - the name of the browser (ie Mozilla, MSIE, Opera)
-  UA_Maker   - the maker of the browser (ie Netscape or Microsoft)
-  UA_Version - the version of the browser
-  UA_Level   - the "level" of the browser:
-    0 - the browser offers no support for javascript
-    1 - the browser offers support compatible with NS 4
-    2 - the browser offers support compatible with IE 5
-    3 - the browser offers support compatible with IE 6
-  UA_bLoaded - set to true if UA_Init() has been called
-  </PRE>
-  The most useful of these is the UA_Level variable, which can be used to
-  tailor output to the browser. Note, however, that the is code works
-  entirely upon the user agent passed by the browser. This string can be
-  forged (some browsers do this). In addition, the code does not detect
-  whether javascript is actually enabled on the client.
-*/
-
 function UA_Init()
 { if(UA_bLoaded) return;
 
