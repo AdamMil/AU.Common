@@ -72,6 +72,7 @@ STDMETHODIMP CVarArray::put_Capacity(long nEls)
   if(m_Max != 0)
   { sa->rgsabound[0].cElements = m_Var.v.parray->rgsabound[0].cElements;
     memcpy(sa->pvData, m_Var.v.parray->pvData, sa->rgsabound[0].cElements*sizeof(VARIANT));
+    m_Var.v.parray->rgsabound[0].cElements=0; // make sure data doesn't get wiped out
   }
   else sa->rgsabound[0].cElements = 0;
 

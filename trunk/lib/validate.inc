@@ -65,7 +65,8 @@ function _VAL_Init()
   Message  - the error message from an unsuccessful validation is stored here.
              if no error has occurred yet, this value is null. it is not a
              problem to write to this field.
-  GetRawField - a reference to a function used to read the raw form data.</PRE>
+  GetRawField   - a reference to a function used to read the raw form data.
+  GetFieldCount - a reference to a function used to get the number of fields.</PRE>
 )~ */
 function Validator(form_id)
 { if(typeof(UA_bLoaded)=="undefined")
@@ -83,7 +84,8 @@ function Validator(form_id)
   this.OnSubmitCode = _VAL_OnSubmitCode;
   this.WriteCSCode  = _VAL_WriteCSCode;
   
-  this.GetRawField  = _VAL_GetRawField;
+  this.GetRawField   = _VAL_GetRawField;
+  this.GetFieldCount = _VAL_GetFieldCount;
 
   this.FormID   = form_id;
   this.Controls = new Array();
@@ -120,7 +122,10 @@ function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, cl
   this.Name    = name;
   this.Data    = new Array(desc, maxlen, minlen, type, dtype, clean, nomatch, nmmsg, match, mmsg,
                            range, execbv, execav);
-  this.Value   = par.GetRawField(name)!=null ? this.Field(name) : value==null ? null : value; // squash 'undefined'
+  if(type=="checkbox")
+    this.Value = par.GetRawField(name)>"" ? "1" : par.GetFieldCount() ? null : value==null ? null : value;
+  else
+    this.Value = par.GetRawField(name)!=null ? this.Field(name) : value==null ? null : value; // squash 'undefined'
   this.Typed   = null;
   this.Written = false;
 }
@@ -261,8 +266,12 @@ function _VAL_Write(name, attr, value)
   <PRE>variant Field(name)</PRE>
   This method returns the properly-typed value for the control named. An exception will
   be thrown if the control does not exist or the control's value cannot be converted
-  to the type specified in the 'dtype' parameter to `Add'. If the control is of type
-  "checkbox", false will be returned if the field is empty, and true otherwise.
+  to the type specified in the 'dtype' parameter to `Add'. However, if the control's
+  value is empty/null and a data type other than "string" was specified, it will not
+  be converted, and null will be returned. Otherwise, if the control's value is
+  empty/null an empty string will be returned.
+  If the control is of type "checkbox", false will be returned if the field is empty,
+  and true otherwise.
 )~ */
 function _VAL_Field(name)
 { ctl = this.Control(name);
@@ -270,11 +279,13 @@ function _VAL_Field(name)
   if(ctl.Typed != null) return ctl.Typed;
 
   var v = ctl.Value, type;
-  if(ctl.Data[_VAL_TYPE]=="checkbox") v=(v!=null && v>"");
-  else if((type=ctl.Data[_VAL_DTYPE]))
-  { v=_VAL_CoerceType(v==null ? null : String(v), type);
+  if(ctl.Data[_VAL_TYPE]=="checkbox") v = v>"";
+  else if((type=ctl.Data[_VAL_DTYPE]) != null && type != "string")
+  { if(v==null || v=="") return null;
+    v=_VAL_CoerceType(String(v), type);
     if(v==null) _VAL_Die(name+" could not be converted to type '"+type+"'. the value is: "+ctl.Value);
   }
+  else if(v==null || v=="") v="";
   return ctl.Typed=v;
 }
 
@@ -306,7 +317,7 @@ function _VAL_Persist()
     if(ctl.Value==null) ret+="n";
     else
     { ret += "s";
-      ret += String(ctl.Value).replace(/%/g, "%%").replace(/,/g, "%1");
+      ret += String(ctl.Value).replace(/%/g, "%1").replace(/,/g, "%2");
     }
   }
   return ret;
@@ -325,7 +336,7 @@ function _VAL_Restore(dat)
     val = dat[i+1];
     c   = val.charAt(0);
     if(c=='n') ctl.Value=null;
-    else if(c=='s') ctl.Value=val.substr(1).replace(/%%/g, "%").replace(/%1/g, ",");
+    else if(c=='s') ctl.Value=val.substr(1).replace(/%2/g, ",").replace(/%1/g, "%");
     ctl.Typed = null;
   }
 }
@@ -336,11 +347,21 @@ function _VAL_Restore(dat)
   validation code, but you can use it if you want. It returns either null or a string containing
   the value referenced by 'key'. If you have a custom method of field access (ie, from an upload
   control), you can create your own GetRawField function and assign it to the validator to force
-  it to use your function instead.
+  it to use your function instead. If you override this, you should probably override
+  `GetFieldCount' as well.
 )~ */
 function _VAL_GetRawField(key)
 { var v = Request.Form(key);
   return v>"" ? v : null;
+}
+
+/* ~(MODULES::INC::VALIDATE, f'Validator::GetFieldCount
+  <PRE>long GetFieldCount()</PRE>
+  This method returns the number of fields actually submitted. If you override this, you should
+  probably override `GetRawField' as well.
+)~ */
+function _VAL_GetFieldCount()
+{ return Request.Form.Count;
 }
 
 /* ~(MODULES::INC::VALIDATE, f'Validator::OnSubmitCode
@@ -451,7 +472,7 @@ function _VALCTL_Validate()
     if(typeof(ret)=="string") err=true, msg=ret;
     else if(ret==false) return true;
   }
-  if(!err && (v=arr[_VAL_DTYPE]) && v != "string" && _VAL_CoerceType(this.Value, v)==null)
+  if(!err && (v=arr[_VAL_DTYPE]) && this.Value>"" && v != "string" && _VAL_CoerceType(this.Value, v)==null)
     err=true, msg="is not a valid "+v+".\n\nIts value is:\n"+this.Value;
   if(!err && (v=arr[_VAL_MAXLEN]) && this.Value.length>v)
     err=true, msg="must be at most "+v+" characters.";
@@ -531,17 +552,18 @@ function _VALCTL_HTML(attr, value)
   { if(type=="radio")
     { if(value != null && this.Value==String(value)) ret += " checked=\"1\"";
     }
-    else if(type=="checkbox") ret += (value>"" ? " checked value=\"1\"" : " value=\"1\"");
     else if(value != null) { value=this.Value=String(value); this.Typed=null; }
     else value=this.Value;
 
-    if(value != null)
+    if(type=="checkbox")
+      ret += (value==null || value=="" || value=="0" || String(value).toLowerCase()=="false" ? " value=\"1\"" : " checked value=\"1\"");
+    else if(value != null)
     { if(type=="textarea")
       { ret += '>'; ret += value; ret += "</textarea>";
         return ret;
       }
-      else if(type != "select" && type != "checkbox")
-      { ret += " value=\""; ret += value; ret += "\"/>";
+      else if(type!="select")
+      { ret += " value=\""; ret += value.replace(/\"/g, "&quot;"); ret += "\"/>";
         return ret;
       }
     }
