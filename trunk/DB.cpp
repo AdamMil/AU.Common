@@ -29,6 +29,7 @@ CDB::CDB()
   m_LockType   = adLockReadOnly;
   m_ConnStr    = NULL;
   m_bInit      = false;
+  m_bDisc      = true;
 } /* CDB */
 
 CDB::~CDB()
@@ -150,9 +151,9 @@ STDMETHODIMP CDB::put_CursorType(int nType)
   accepts and returns values from the ADO lock type enum. This value will be reset to
   the default after the next Execute* call (successful or not). This defaults to
   adLockReadOnly. Using a lock type that indicates a connected recordset (anything besides
-  adLockReadOnly) is generally not a good idea for a database object that will be shared
-  among multiple threads, because if the DB object is closed, the connected recordset will
-  be invalidated.
+  adLockReadOnly or adOpenStatic) is generally not a good idea for a database object that
+  will be shared among multiple threads, because if the DB object is closed, the connected
+  recordset will be invalidated.
 )~ */
 STDMETHODIMP CDB::get_LockType(int *pnType)
 { if(!pnType) return E_POINTER;
@@ -250,11 +251,34 @@ STDMETHODIMP CDB::get_IsOpen(VARIANT_BOOL *pbOpen)
 )~ */
 STDMETHODIMP CDB::put_ParmArray(VARIANT vParms)
 { if(vParms.vt==VT_VARIANT || vParms.vt==(VT_VARIANT|VT_BYREF)) vParms = *vParms.pvarVal;
-  if(vParms.vt == VT_NULL) m_Parms.Clear();
+  if(vParms.vt==VT_NULL) m_Parms.Clear();
   else if(vParms.vt != (VT_ARRAY|VT_VARIANT)) return E_INVALIDARG;
   m_Parms = vParms;
   return S_OK;
 } /* put_ParmArray */
+
+/* ~(MODULES::DB, p'DB::Disconnected
+  <PRE>
+  [propget] HRESULT Disconnected([out,retval] VARIANT_BOOL *pbDisc);
+  [propput] HRESULT Disconnected([in] VARIANT_BOOL bDisc);</PRE>
+  This property determines whether an attempt will be made to disconnect the recordset.
+  By default, recordsets are disconnected if the cursor type is adOpenForwardOnly.
+  Setting this to false will prevent that behavior, allowing large recordsets to be
+  returned without consuming all the memory on the client. This property is reset to true
+  after the next call to Execute*(), whether successful or not. 
+)~ */
+STDMETHODIMP CDB::get_Disconnected(VARIANT_BOOL *pbDisc)
+{ if(pbDisc==NULL) return E_POINTER;
+  AComLock lock(this);
+  *pbDisc = m_bDisc ? VBTRUE : VBFALSE;
+  return S_OK;
+} /* get_Disconnected */
+
+STDMETHODIMP CDB::put_Disconnected(VARIANT_BOOL bDisc)
+{ AComLock lock(this);
+  m_bDisc = (bDisc!=VBFALSE);
+  return S_OK;
+} /* put_Disconnected */
 
 /* ~(MODULES::DB, f'DB::Open
   <PRE>HRESULT Open();</PRE>
@@ -612,7 +636,8 @@ HRESULT CDB::DoExecute(ADORecordset **pRet)
 
   rs->put_CursorLocation(adUseClient);
   hRet = rs->Open(var, g_vMissing, (CursorTypeEnum)m_CursorType, (LockTypeEnum)m_LockType, -1);
-  if(SUCCEEDED(hRet) && m_LockType==adLockReadOnly && (m_CursorType==adOpenForwardOnly || m_CursorType==adOpenStatic))
+  if(m_bDisc && SUCCEEDED(hRet) && m_LockType==adLockReadOnly &&
+     (m_CursorType==adOpenForwardOnly || m_CursorType==adOpenStatic))
     rs->putref_ActiveConnection(NULL);
   VariantClear(&var);
   if(SUCCEEDED(hRet)) rs.CopyTo(pRet);
@@ -624,6 +649,7 @@ void CDB::ResetDefaults()
   m_LockType   = adLockReadOnly;
   put_Timeout(30);
   m_Parms.Clear();
+  m_bDisc = true;
 } /* ResetDefaults */
 
 HRESULT CDB::FillParams(SAFEARRAY **aVals)

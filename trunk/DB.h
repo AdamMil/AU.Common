@@ -88,6 +88,8 @@ public:
   STDMETHODIMP get_Command(/*[out, retval]*/ ADOCommand **ppCmd);
   STDMETHODIMP get_IsOpen(/*[out, retval]*/ VARIANT_BOOL *pbOpen);
   STDMETHODIMP put_ParmArray(/*[in]*/ VARIANT vParms);
+  STDMETHODIMP get_Disconnected(/*[out, retval]*/ VARIANT_BOOL *pbDisc);
+  STDMETHODIMP put_Disconnected(/*[in]*/ VARIANT_BOOL bDisc);
 
   STDMETHODIMP Open();
   STDMETHODIMP Close();
@@ -119,7 +121,7 @@ protected:
   BSTR m_ConnStr;
   UA4  m_nTimeout;
   int  m_CursorType, m_LockType;
-  bool m_bInit;
+  bool m_bInit, m_bDisc;
   
   static const DataTypeEnum CDB::m_dbTypes[VT_UINT];
 
