@@ -172,9 +172,9 @@ ASTR & ASTR::UpperCase()
   return *this;
 } /* LowerCase */
 
-ASTR & ASTR::SetCStr(const char *s)
+ASTR & ASTR::SetCStr(const char *s, UA4 len)
 { New();
-  m_Ref->SetCStr(s);
+  m_Ref->SetCStr(s, len);
   return *this;
 }
 
@@ -289,9 +289,8 @@ void ASTR::ASTRRef::Replace(const WCHAR *find, const WCHAR *rep, WCHAR *p, UA4 f
   else do memcpy(p, rep, rbytes); while((p=wcsstr(p+=flen, find)) != NULL);
 } /* Replace */
 
-void ASTR::ASTRRef::SetCStr(const char *s)
+void ASTR::ASTRRef::SetCStr(const char *s, UA4 len)
 { assert(m_Refs==1);
-  UA4 len = (UA4)strlen(s);
   if(len>m_Max) Grow(len);
   MultiByteToWideChar(CP_ACP, 0, s, (int)len, m_Str, (int)m_Max);
   m_Str[len]=0;

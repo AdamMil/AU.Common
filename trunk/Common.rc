@@ -98,6 +98,8 @@ IDR_DBMAN               REGISTRY                "DBMan.rgs"
 IDR_UTILITY             REGISTRY                "Utility.rgs"
 IDR_UPLOAD              REGISTRY                "Upload.rgs"
 IDR_UPFILE              REGISTRY                "UpFile.rgs"
+IDR_SESSIONMAN          REGISTRY                "SessionMan.rgs"
+IDR_SESSION             REGISTRY                "Session.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //

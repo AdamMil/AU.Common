@@ -96,6 +96,7 @@ public:
   STDMETHODIMP Execute(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ ADORecordset **ppRS);
   STDMETHODIMP ExecuteO(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ ADORecordset **ppRS);
   STDMETHODIMP ExecuteVal(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ VARIANT *pRet);
+  STDMETHODIMP ExecuteValO(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ VARIANT *pvOut);
   STDMETHODIMP ExecuteNR(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
   STDMETHODIMP ExecuteONR(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
   STDMETHODIMP Output(/*[in]*/ BSTR sParam, /*[out,retval]*/ VARIANT *pvOut);

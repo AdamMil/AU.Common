@@ -212,7 +212,7 @@ STDMETHODIMP CUtility::GetTickCount(long *pnMS)
   <PRE>HRESULT LogonUser([in] BSTR sUser, [in] BSTR sPass, [in,defaultvalue("")] BSTR sDomain);</PRE>
   The LogonUser method allows the caller to impersonate a user in order to access
   resources not normally accessible. This is useful, for instance, from ASP in
-  order to quickly get administrative priviledges. 'sUser' and 'sPass' are the
+  order to briefly get administrative priviledges. 'sUser' and 'sPass' are the
   login for a system user. If the user is on another domain, 'sDomain' can be
   used to specify the domain in which the user resides. If used from ASP, 
   it is important to call `RevertLogin' or to destroy the Utility object before
@@ -239,7 +239,7 @@ STDMETHODIMP CUtility::LogonUser(BSTR sUser, BSTR sPass, BSTR sDomain)
   <PRE>HRESULT RevertLogin();</PRE>
   The RevertLogin method releases the login token acquired by `LogonUser'. This is
   called when the Utility object is destroyed, if necessary, but should be called
-  expicitly so that you can be sure that things aren't accessed/called with improper
+  explicitly so that you can be sure that things aren't accessed/called with improper
   security credentials.
 )~ */
 STDMETHODIMP CUtility::RevertLogin()
