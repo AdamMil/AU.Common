@@ -270,11 +270,12 @@ STDMETHODIMP CUpload::OnStartPage(IDispatch *pDisp)
 } /* OnStartPage */
 
 UA4 CUpload::URLDecode(char *start, char *end)
-{ UA4  len=(UA4)(end-start);
+{ char *write = start;
+  UA4  len=(UA4)(end-start);
   char c, t;
   while(start<end)
   { c = *start;
-    if(c=='+') *start++=' ';
+    if(c=='+') c=' ';
     else if(c=='%')
     { if(end-start>=2)
       { t = tolower(*++start);
@@ -283,10 +284,10 @@ UA4 CUpload::URLDecode(char *start, char *end)
         t = tolower(*++start);
         if(t<'0' || t>'f' || (t>'9' && t<'a')) break;
         c |= (t<'a' ? t-'0' : t-'a'+10);
-        start[-2]=c, len-=2;
+        len-=2;
       }
     }
-    else start++;
+    *write++=c, start++;
   }
   return len;
 }

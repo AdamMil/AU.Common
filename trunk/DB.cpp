@@ -664,14 +664,20 @@ HRESULT CDB::FillParams(SAFEARRAY **aVals)
     
     for(vi=0; vi<nvars; vi++)
     { pvar  = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
-      if(vt > VT_UINT) return E_INVALIDARG;
-      type = m_dbTypes[vt];
-      if(vt & VT_ARRAY) type &= 0x2000;
-      if(vt==VT_BSTR)
-      { size = SysStringLen(pvar->bstrVal);
-        if(size==0) size=1;
+
+      if(vt==(VT_ARRAY|VT_UI1))
+      { size = pvar->parray->cbElements*pvar->parray->rgsabound[0].cElements;
+        type = adVarBinary;
       }
-      else size=1;
+      else
+      { if(vt==VT_BSTR)
+        { size = SysStringLen(pvar->bstrVal);
+          if(size==0) size=1;
+        }
+        else size=1;
+        if(vt > VT_UINT) return E_INVALIDARG;
+        type = m_dbTypes[vt];
+      }
 
       CHKRET(m_Cmd->CreateParameter((BSTR)ASTR::EmptyBSTR, (DataTypeEnum)type, adParamInput, size, *pvar, &parm));
       CHKRET(parms->Append(parm));
@@ -716,14 +722,19 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
     WCHAR fc=s[0];
     if(fc==L'@' || fc==L'+')
     { pvar = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
-      if(vt==VT_BSTR)
-      { size = SysStringLen(pvar->bstrVal);
-        if(size==0) size=1;
+      if(vt==(VT_ARRAY|VT_UI1))
+      { size = pvar->parray->cbElements*pvar->parray->rgsabound[0].cElements;
+        type = adVarBinary;
       }
-      else size=1;
-      if(vt > VT_UINT) return E_INVALIDARG;
-      type = m_dbTypes[vt];
-      if(vt & VT_ARRAY) type &= 0x2000;
+      else
+      { if(vt==VT_BSTR)
+        { size = SysStringLen(pvar->bstrVal);
+          if(size==0) size=1;
+        }
+        else size=1;
+        if(vt > VT_UINT) return E_INVALIDARG;
+        type = m_dbTypes[vt];
+      }
       vi++;
     }
     else pvar=NULL, type=0, size=1;
