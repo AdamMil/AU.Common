@@ -27,6 +27,19 @@
 
 
 // CVarArray
+/* ~(MODULES::VARARR, c'VarArray
+  The VarArray object (ProgID AU.Common.VarArray) provides a simple method to create
+  an array of VARIANTs. It is useful when building SQL queries from many optional
+  parts from languages where you cannot pass an array directly to the Execute*() methods
+  of the `DB' object. You can build an array incrementally with the VarArray object and
+  assign it to the `DB::ParmArray' property. Then, the next Execute*() call will use that
+  array instead of the one passed to Execute*(), allowing you to pass a variable number
+  of parameters to the Execute*() calls from languages that otherwise wouldn't allow it.
+  There may be other uses for this, but it is not intended as a general-purpose array,
+  as it does not support deleting or altering items. Generally, you will call `Add' as
+  many times as necessary to add items to the array, and then use the `Array' or
+  `ArrayCopy' properties to retrieve the array built.
+)~ */
 
 class ATL_NO_VTABLE CVarArray : 
 	public CComObjectRootEx<CComSingleThreadModel>,
@@ -50,6 +63,7 @@ public:
   STDMETHODIMP get_Capacity(/*[out,retval]*/ long *pnEls);
   STDMETHODIMP put_Capacity(/*[in]*/ long nEls);
   STDMETHODIMP get_Array(/*[out,retval]*/ VARIANT *pvOut);
+  STDMETHODIMP get_ArrayCopy(/*[out,retval]*/ VARIANT *pvOut);
   STDMETHODIMP Add(/*[in]*/ VARIANT vEl);
   
 protected:
