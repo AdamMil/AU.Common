@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in Web development.
+   controls to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or
@@ -37,6 +37,12 @@
 
 #define VBTRUE  (-1)
 #define VBFALSE 0
+
+#if _MSC_VER >= 1300
+  #define SNP std::
+#else
+  #define SNP
+#endif
 
 typedef signed  char     I1;
 typedef unsigned char    U1;
@@ -94,12 +100,18 @@ class ASTR
   void    Clear();
 
   ASTR &   Format(const WCHAR *ctl, ...);
-  ASTR &   Format(const WCHAR *ctl, std::va_list);
+  ASTR &   Format(const WCHAR *ctl, SNP va_list);
   ASTR &   Replace(const WCHAR *find, const WCHAR *rep);
   ASTR     Substr(IA4 start)          const { return Substring(start, (IA4)m_Length-1);  }
   ASTR     Substr(IA4 start, UA4 len) const { return Substring(start, start+(IA4)len-1); }
   ASTR     Substring(IA4 start, IA4 end) const;
   ASTRList Split(const WCHAR *) const;
+  ASTR     ToLowerCase() const;
+  ASTR     ToUpperCase() const;
+  ASTR &   LowerCase() { wcslwr(m_Str); return *this; }
+  ASTR &   UpperCase() { wcsupr(m_Str); return *this; }
+
+  ASTR &   SetCStr(const char *);
 
   UA4     Length() const { return m_Length; }
   void    Reserve(UA4);
