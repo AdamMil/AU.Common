@@ -64,11 +64,12 @@ function _VAL_Init()
   CtlIndex - an array of ControlObj objects indexed by lowercase field name
   Message  - the error message from an unsuccessful validation is stored here.
              if no error has occurred yet, this value is null. it is not a
-             problem to write to this field.</PRE>
+             problem to write to this field.
+  GetRawField - a reference to a function used to read the raw form data.</PRE>
 )~ */
 function Validator(form_id)
 { if(typeof(UA_bLoaded)=="undefined")
-    throw new Error(0, "UA_Init() from browser.inc must be called before this method");
+    _VAL_Die("UA_Init() from browser.inc must be called before this method");
   if(!_VAL_bInit) _VAL_Init();
 
   this.Add      = _VAL_Add;
@@ -77,8 +78,12 @@ function Validator(form_id)
   this.Write    = _VAL_Write;
   this.Field    = _VAL_Field;
   this.RawField = _VAL_RawField;
+  this.Persist  = _VAL_Persist;
+  this.Restore  = _VAL_Restore;
   this.OnSubmitCode = _VAL_OnSubmitCode;
   this.WriteCSCode  = _VAL_WriteCSCode;
+  
+  this.GetRawField  = _VAL_GetRawField;
 
   this.FormID   = form_id;
   this.Controls = new Array();
@@ -92,14 +97,17 @@ function Validator(form_id)
   advanced purposes. The ControlObj object contains the following methods: 
   `Validate', `HTML', `Field', `SetVal'. In addition, it contains the following properties:
   <PRE>
-  Parent - a reference to the parent Validator object
-  Name   - the form name of the control
-  Data   - an array containing the validation parameters for this control, in the
+  Parent  - a reference to the parent Validator object
+  Name    - the form name of the control
+  Data    - an array containing the validation parameters for this control, in the
            following order: desc, maxlen, minlen, type, dtype, clean, nomatch,
            nmmsg, match, mmsg, range, execav, execbv
-  Value  - the value of the control. This should be set using SetVal. Unless manually
+  Value   - the value of the control. This should be set using SetVal. Unless manually
            changed, this will always be a string or null.
-  Typed  - the cached typed value of the control. This is recalculated if null.</PRE>
+  Typed   - the cached typed value of the control. This is recalculated if null.
+  Written - a boolean value that is true if the control has been written already. This
+            does not necessarily indicate that the data has been sent to the client. It
+            only indicates that HTML() has been called.</PRE>
 )~ */
 function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, clean, nomatch, nmmsg,
                          match, mmsg, range, execbv, execav)
@@ -108,12 +116,13 @@ function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, cl
   this.Field    = _VALCTL_Field;
   this.SetVal   = _VALCTL_SetVal;
 
-  this.Parent = par;
-  this.Name   = name;
-  this.Data   = new Array(desc, maxlen, minlen, type, dtype, clean, nomatch, nmmsg, match, mmsg,
-                          range, execbv, execav);
-  this.Value  = value ? value : Request.Form(name)>"" ? this.Field(name) : null;
-  this.Typed  = null;
+  this.Parent  = par;
+  this.Name    = name;
+  this.Data    = new Array(desc, maxlen, minlen, type, dtype, clean, nomatch, nmmsg, match, mmsg,
+                           range, execbv, execav);
+  this.Value   = par.GetRawField(name)!=null ? this.Field(name) : value==null ? null : value; // squash 'undefined'
+  this.Typed   = null;
+  this.Written = false;
 }
 
 /* ~(MODULES::INC::VALIDATE, f'Validator::Add
@@ -142,8 +151,8 @@ function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, cl
             must be able to be converted into the given type. if not passed
             or null, the default is "string", which essentially does no type
             conversion
-  value   - the initial value of the control. if not passed or null, this
-            will be initialized from the current form data
+  value   - the default value of the control. if the control cannot be
+            initialized from form data, it will be initialized from 'value'
   clean   - this is a regexp which is used to clean the field data. any parts
             of the input data that match this regexp will be replaced with ""
             even the "raw" field data is cleaned. for instance "\D" will strip
@@ -190,7 +199,7 @@ function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, cl
 )~ */
 function _VAL_Add(name, desc, maxlen, minlen, type, dtype, value, clean, nomatch, nmmsg, match,
                   mmsg, range, execbv, execav)
-{ if(!name) throw new Error(0, "Field must have a name!");
+{ if(!name) _VAL_Die("Field must have a name!");
   name = String(name).toLowerCase();
   if(type)  type  = String(type).toLowerCase();
   if(dtype) dtype = String(dtype).toLowerCase();
@@ -252,17 +261,19 @@ function _VAL_Write(name, attr, value)
   <PRE>variant Field(name)</PRE>
   This method returns the properly-typed value for the control named. An exception will
   be thrown if the control does not exist or the control's value cannot be converted
-  to the type specified in the 'dtype' parameter to `Add'.
+  to the type specified in the 'dtype' parameter to `Add'. If the control is of type
+  "checkbox", false will be returned if the field is empty, and true otherwise.
 )~ */
 function _VAL_Field(name)
 { ctl = this.Control(name);
-  if(!ctl) throw new Error(0, "No such control!");
+  if(!ctl) _VAL_Die("No such control!");
   if(ctl.Typed != null) return ctl.Typed;
 
   var v = ctl.Value, type;
-  if((type=ctl.Data[_VAL_DTYPE]))
-  { v=_VAL_CoerceType(String(v), type);
-    if(v==null) throw new Error(1, name+" could not be converted to type '"+type+"'. name's value is: "+ctl.Value);
+  if(ctl.Data[_VAL_TYPE]=="checkbox") v=(v!=null && v>"");
+  else if((type=ctl.Data[_VAL_DTYPE]))
+  { v=_VAL_CoerceType(v==null ? null : String(v), type);
+    if(v==null) _VAL_Die(name+" could not be converted to type '"+type+"'. the value is: "+ctl.Value);
   }
   return ctl.Typed=v;
 }
@@ -275,8 +286,61 @@ function _VAL_Field(name)
 )~ */
 function _VAL_RawField(name)
 { ctl = this.Control(name);
-  if(!ctl) throw new Error(0, "No such control!");
-  return ctl.Value!=null ? ctl.Value : "";
+  if(!ctl) _VAL_Die("No such control!");
+  return ctl.Value==null ? "" : ctl.Value;
+}
+
+/* ~(MODULES::INC::VALIDATE, f'Validator::Persist
+  <PRE>string Persist()</PRE>
+  This method saves the current values of all the controls into a string. The string can later
+  be passed to `Restore' to restore the Validator to the state it was in when Persist() was
+  called.
+)~ */
+function _VAL_Persist()
+{ var i, ctl, ctls=this.Controls, len=ctls.length, ret="";
+  for(i=0; i<len; i++)
+  { ctl = ctls[i];
+    if(i) ret+=',';
+    ret += ctl.Name;
+    ret += ',';
+    if(ctl.Value==null) ret+="n";
+    else
+    { ret += "s";
+      ret += String(ctl.Value).replace(/%/g, "%%").replace(/,/g, "%1");
+    }
+  }
+  return ret;
+}
+
+/* ~(MODULES::INC::VALIDATE, f'Validator::Restore
+  <PRE>void RawField(string)</PRE>
+  This method takes a string returned from `Persist' and uses it to restore the state of the
+  Validator to the state it was in when Persist() was called.
+)~ */
+function _VAL_Restore(dat)
+{ dat = dat.split(',');
+  var i, len=dat.length, val, c;
+  for(i=0; i<len; i+=2)
+  { ctl = this.Control(dat[i]);
+    val = dat[i+1];
+    c   = val.charAt(0);
+    if(c=='n') ctl.Value=null;
+    else if(c=='s') ctl.Value=val.substr(1).replace(/%%/g, "%").replace(/%1/g, ",");
+    ctl.Typed = null;
+  }
+}
+
+/* ~(MODULES::INC::VALIDATE, f'Validator::GetRawField
+  <PRE>variant GetRawField(key)</PRE>
+  This method returns the raw value of the field. Normally, it is only used internally by the
+  validation code, but you can use it if you want. It returns either null or a string containing
+  the value referenced by 'key'. If you have a custom method of field access (ie, from an upload
+  control), you can create your own GetRawField function and assign it to the validator to force
+  it to use your function instead.
+)~ */
+function _VAL_GetRawField(key)
+{ var v = Request.Form(key);
+  return v>"" ? v : null;
 }
 
 /* ~(MODULES::INC::VALIDATE, f'Validator::OnSubmitCode
@@ -293,7 +357,9 @@ function _VAL_OnSubmitCode()
 /* ~(MODULES::INC::VALIDATE, f'Validator::WriteCSCode
   <PRE>void WriteCSCode(name)</PRE>
   This method writes the client-side code necessary to support this validator on the browser.
-  It should be used in a location where &lt;script&gt; blocks could safely go.
+  It should be used in a location where &lt;script&gt; blocks could safely go. In addition,
+  it should be called AFTER all form elements have been generated with `Write' or
+  `ControlObj::HTML'. If it is not, 
 )~ */
 function _VAL_WriteCSCode()
 { if(!this.Controls.length) return;
@@ -324,13 +390,13 @@ function _VAL_WriteCSCode()
       }
       Response.Write(')');
       
-      if(!bNeedInit && dat[_VAL_TYPE]=="select" && ctl.Value != null) bNeedInit=true;
+      if(!bNeedInit && ctl.Written && dat[_VAL_TYPE]=="select" && ctl.Value != null) bNeedInit=true;
     }
     Response.Write("\n);\n");
   }
   else if(UA_Level>=2)
   { for(i=0; i<len; i++)
-      if(ctls[i].Data[_VAL_TYPE]=="select" && ctls[i].Value != null) { bNeedInit=true; break; }
+      if(ctls[i].Data[_VAL_TYPE]=="select" && ctls[i].Written && ctls[i].Value != null) { bNeedInit=true; break; }
   }
 
   if(bNeedInit)
@@ -338,7 +404,7 @@ function _VAL_WriteCSCode()
     Response.Write("HOOK_addOnLoad(_VAL_InitForm, new Array(");
     for(i=0,j=false; i<len; i++)
     { ctl = ctls[i];
-      if(ctl.Data[_VAL_TYPE]=="select" && ctl.Value != null)
+      if(ctl.Data[_VAL_TYPE]=="select" && ctl.Written && ctl.Value != null)
       { if(j) Response.Write(", ");
         else j=true;
         Response.Write(this.FormID);
@@ -374,7 +440,7 @@ function _VAL_Escape(v)
 function _VALCTL_Validate()
 { var arr = this.Data, v, len, fun, regex, err=false, msg;
 
-  this.Value = this.Value ? String(this.Value) : "";
+  this.Value = (this.Value==null ? "" : String(this.Value));
   this.Typed = null;
 
   if((v=arr[_VAL_CLEAN]))
@@ -386,7 +452,7 @@ function _VALCTL_Validate()
     else if(ret==false) return true;
   }
   if(!err && (v=arr[_VAL_DTYPE]) && v != "string" && _VAL_CoerceType(this.Value, v)==null)
-    err=true, msg="cannot be converted to a "+v;
+    err=true, msg="is not a valid "+v+".\n\nIts value is:\n"+this.Value;
   if(!err && (v=arr[_VAL_MAXLEN]) && this.Value.length>v)
     err=true, msg="must be at most "+v+" characters.";
   if(!err && (v=arr[_VAL_MINLEN]))
@@ -434,9 +500,10 @@ function _VALCTL_Validate()
 )~ */
 function _VALCTL_HTML(attr, value)
 { var type = this.Data[_VAL_TYPE], ret;
+  this.Written = true;
 
   if(type==null) type="text";
-  if(type=="textbox") ret="<textbox";
+  if(type=="textarea") ret="<textarea";
   else if(type=="select") ret="<select";
   else
   { ret="<input";
@@ -464,22 +531,23 @@ function _VALCTL_HTML(attr, value)
   { if(type=="radio")
     { if(value != null && this.Value==String(value)) ret += " checked=\"1\"";
     }
+    else if(type=="checkbox") ret += (value>"" ? " checked value=\"1\"" : " value=\"1\"");
     else if(value != null) { value=this.Value=String(value); this.Typed=null; }
     else value=this.Value;
 
     if(value != null)
-    { if(type=="textbox")
-      { ret += '>'; ret += value; ret += "</textbox>";
+    { if(type=="textarea")
+      { ret += '>'; ret += value; ret += "</textarea>";
         return ret;
       }
-      else if(type != "select")
+      else if(type != "select" && type != "checkbox")
       { ret += " value=\""; ret += value; ret += "\"/>";
         return ret;
       }
     }
   }
 
-  if(type=="textbox") return ret += "></textbox>";
+  if(type=="textarea") return ret += "></textarea>";
   else if(type=="select") return ret += ">";
   else return ret += "/>";
 }
@@ -490,8 +558,8 @@ function _VALCTL_HTML(attr, value)
   If the field was not submitted, an empty string is returned.
 )~ */
 function _VALCTL_Field()
-{ var v=Request.Form(this.Name);
-  if(v>"")
+{ var v=this.Parent.GetRawField(this.Name);
+  if(v != null)
   { v = String(v);
     if(this.Data[_VAL_CLEAN])
     { var regex = new RegExp(this.Data[_VAL_CLEAN], "gm");
@@ -527,6 +595,12 @@ function _VAL_CoerceType(val, type)
   { try { val=new Date(val); } catch(e) { return null; }
     return val;
   }
-  throw new Error(0, "Unknown type "+type);
+  _VAL_Die("Unknown type "+type);
+}
+
+function _VAL_Die(s)
+{ Response.Write("ERROR: ");
+  Response.Write(s);
+  throw new Error(-1, s);
 }
 </script>
