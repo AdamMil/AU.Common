@@ -37,7 +37,7 @@
   
   
 var _VAL_DESC,  _VAL_MAXLEN, _VAL_MINLEN, _VAL_TYPE,  _VAL_DTYPE,  _VAL_CLEAN,  _VAL_NOMATCH,
-    _VAL_NMMSG, _VAL_MATCH,  _VAL_MMSG,   _VAL_RANGE, _VAL_EXECBV, _VAL_EXECAV,
+    _VAL_NMMSG, _VAL_MATCH,  _VAL_MMSG,   _VAL_RANGE, _VAL_EXECBV, _VAL_EXECAV;
 var _VAL_AttrNames, _VAL_bInit, _VAL_bWroteCS;
 
 function _VAL_Init()
@@ -90,15 +90,15 @@ function Validator(form_id)
   The ControlObj object represents a single control within a Validator. Generally,
   you will never need to use the ControlObj object directly, but it is provided for
   advanced purposes. The ControlObj object contains the following methods: 
-  `Validate', `HTML', `Field'. In addition, it contains the following properties:
+  `Validate', `HTML', `Field', `SetVal'. In addition, it contains the following properties:
   <PRE>
   Parent - a reference to the parent Validator object
   Name   - the form name of the control
   Data   - an array containing the validation parameters for this control, in the
            following order: desc, maxlen, minlen, type, dtype, clean, nomatch,
            nmmsg, match, mmsg, range, execav, execbv
-  Value  - the value of the control. This is always either a string or null, unless
-           manually set to something else.
+  Value  - the value of the control. This should be set using SetVal. Unless manually
+           changed, this will always be a string or null.
   Typed  - the cached typed value of the control. This is recalculated if null.</PRE>
 )~ */
 function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, clean, nomatch, nmmsg,
@@ -106,6 +106,7 @@ function _VAL_ControlObj(par, name, desc, maxlen, minlen, type, dtype, value, cl
 { this.Validate = _VALCTL_Validate;
   this.HTML     = _VALCTL_HTML;
   this.Field    = _VALCTL_Field;
+  this.SetVal   = _VALCTL_SetVal;
 
   this.Parent = par;
   this.Name   = name;
@@ -233,8 +234,14 @@ function _VAL_Validate()
   be stored in the .Value property and be used in place of it when writing
   the value of the control. Passing null will not override the .Value
   property, as null indicates an unpassed option. To effectively nullify
-  the .Value property, you can pass an empty string. If the control does
-  not exist, a conspicuous-looking error message is returned as the HTML.
+  the .Value property, you can pass an empty string. An exception is made
+  for radio controls. Since they generally are written multiple times,
+  with a different value each time, this function will NOT store 'value'
+  into the .Value property, but will instead check .Value against 'value'
+  and add checked="1" to the HTML if the two match. Passing null for 'value'
+  (or not passing it) will simply use .Value as the value for the radio control 
+  If the control does not exist, a conspicuous-looking error message is
+  returned as the HTML.
 )~ */
 function _VAL_Write(name, attr, value)
 { var ctl = this.Control(name);
@@ -418,7 +425,7 @@ function _VALCTL_HTML(attr, value)
 
   if(type==null) type="text";
   if(type=="textbox") ret="<textbox";
-  else if(type=="select") ret="select";
+  else if(type=="select") ret="<select";
   else
   { ret="<input";
     if(type!="text") ret += " type=\"", ret += type, ret += '\"';
@@ -442,14 +449,19 @@ function _VALCTL_HTML(attr, value)
   if(attr) { ret += ' '; ret+=attr; }
 
   if(type != "password")
-  { if(value) { this.Value=String(value); this.Typed=null; }
-    if(this.Value)
+  { if(type=="radio")
+    { if(value != null && this.Value==String(value)) ret += " checked=\"1\"";
+    }
+    else if(value != null) { value=this.Value=String(value); this.Typed=null; }
+    else value=this.Value;
+
+    if(value != null)
     { if(type=="textbox")
-      { ret += '>'; ret += this.Value; ret += "</textbox>";
+      { ret += '>'; ret += value; ret += "</textbox>";
         return ret;
       }
       else if(type != "select")
-      { ret += " value=\""; ret += this.Value; ret += "\"/>";
+      { ret += " value=\""; ret += value; ret += "\"/>";
         return ret;
       }
     }
@@ -476,6 +488,17 @@ function _VALCTL_Field()
     return v;
   }
   else return "";
+}
+
+/* ~(MODULES::INC::VALIDATE, f'ControlObj::SetVal
+  <PRE>void SetVal(v)</PRE>
+  This method sets the control's value properly. If v is null, the control's
+  value is also set to null. Otherwise, it is set to the string representation
+  of the value.
+)~ */
+function _VALCTL_SetVal(v)
+{ this.Value=(v==null ? null : String(v));
+  this.Typed=null;
 }
 
 function _VAL_CoerceType(val, type)

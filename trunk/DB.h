@@ -108,7 +108,8 @@ protected:
   void    ResetDefaults();
   HRESULT FillParams(SAFEARRAY(VARIANT) *aVals);
   HRESULT FillParamsO(BSTR sParms, SAFEARRAY(VARIANT) *aVals);
-
+  void    MaybeGetSection();
+  
   AComPtr<ADOConnection> m_Conn;
   AComPtr<ADOCommand>    m_Cmd;
   CComPtr<IUnknown>      m_pUnkMarshaler;

@@ -56,9 +56,12 @@ function VAL_Enable(ctl, disable)
 {
 }
 
-function VAL_CmbSelect(fld, val)
-{ var i, o=fld.options, len=o.length;
-	for(i=0; i<len; i++) if(o[i].value==val) { o[i].checked=true; break; }
+function VAL_CmbSelect(sel, val)
+{ if(sel.multiple) VAL_CmbSelectMulti(sel, val);
+  else
+  { var i, o=fld.options, len=o.length;
+	  for(i=0; i<len; i++) if(o[i].value==val) { o[i].checked=true; break; }
+	}
 }
 
 function _VAL_GetAttr(fld, attr)

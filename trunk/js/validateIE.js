@@ -88,10 +88,20 @@ function VAL_Enable(ctl, bDisable)
 /* ~(MODULES::JS::VALIDATE, f'VAL_CmbSelect
   <PRE>void VAL_CmbSelect(sel, val);</PRE>
   This method takes a selection box in 'sel' and changes the selection to the
-  item that has a value matching 'val'.
+  item that has a value matching 'val'. If 'sel' allows multiple selections,
+  val should be a comma-delimited list of values to be selected.
 )~ */
 function VAL_CmbSelect(sel, val)
-{ fld.value=val;
+{ if(sel.multiple) VAL_CmbSelectMulti(sel, val);
+  else fld.value=val;
+}
+
+function VAL_CmbSelectMulti(sel, val)
+{ var vals = new Array();
+  for(var v in val.split(",")) vals[v]=true;
+
+  var i, o=fld.options, len=o.length;
+	for(i=0; i<len; i++) o[i].checked = (vals[o[i].value]==true);
 }
 
 function _VAL_GetAttr(fld, attr)
