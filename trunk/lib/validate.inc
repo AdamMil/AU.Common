@@ -275,7 +275,7 @@ function _VAL_Write(name, attr, value)
 )~ */
 function _VAL_Field(name)
 { ctl = this.Control(name);
-  if(!ctl) _VAL_Die("No such control!");
+  if(!ctl) _VAL_Die("No such control '"+name+"'!");
   if(ctl.Typed != null) return ctl.Typed;
 
   var v = ctl.Value, type;
@@ -297,7 +297,7 @@ function _VAL_Field(name)
 )~ */
 function _VAL_RawField(name)
 { ctl = this.Control(name);
-  if(!ctl) _VAL_Die("No such control!");
+  if(!ctl) _VAL_Die("No such control '"+name+"'!");
   return ctl.Value==null ? "" : ctl.Value;
 }
 
