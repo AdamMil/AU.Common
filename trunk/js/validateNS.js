@@ -59,8 +59,8 @@ function VAL_Enable(ctl, disable)
 function VAL_CmbSelect(sel, val)
 { if(sel.multiple) VAL_CmbSelectMulti(sel, val);
   else
-  { var i, o=fld.options, len=o.length;
-	  for(i=0; i<len; i++) if(o[i].value==val) { o[i].checked=true; break; }
+  { var i, o=sel.options, len=o.length;
+	  for(i=0; i<len; i++) if(o[i].value==val) { o[i].selected=true; break; }
 	}
 }
 
