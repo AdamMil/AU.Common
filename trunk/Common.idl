@@ -117,6 +117,31 @@ library AU_CommonLib
     [id(11)] HRESULT CreateDBRaw([in] BSTR sConnStr, [out,retval] IDB **ppDB);
   };
 
+  /* IUtility */
+  [
+	  object,
+	  uuid(68A4D01C-884B-45AB-B085-ACF5E3B50363),
+	  dual,
+	  nonextensible,
+	  helpstring("IUtility Interface"),
+	  pointer_default(unique)
+  ]
+  interface IUtility : IDispatch
+  {
+    [id(10)] HRESULT StringToBin([in] BSTR sStr, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] VARIANT *pvOut);
+    [id(11)] HRESULT BinToString([in] VARIANT vBin, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] BSTR *psRet);
+    [id(12)] HRESULT HexToBin([in] BSTR sHex, [out,retval] VARIANT *pvOut);
+    [id(13)] HRESULT BinToHex([in] VARIANT vBin, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] BSTR *psHex);
+    [id(14)] HRESULT EncodeB64([in] VARIANT vIn, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] VARIANT *pvOut);
+    [id(15)] HRESULT DecodeB64([in] VARIANT vIn, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] VARIANT *pvOut);
+    [id(16)] HRESULT HashSHA1([in] VARIANT vIn, [out,retval] VARIANT *pvOut);
+    [id(17)] HRESULT CheckSHA1([in] VARIANT vIn, [in] VARIANT vHash, [out,retval] VARIANT_BOOL *pbOK);
+    [id(18)] HRESULT VarType([in] VARIANT vIn, [out,retval] short *pRet);
+    [id(19)] HRESULT GetTickCount([out,retval] long *pnMS);
+
+    [id(20)] HRESULT LogonUser([in] BSTR sUser, [in] BSTR sPass, [in,defaultvalue("")] BSTR sDomain);
+    [id(21)] HRESULT RevertLogin();
+  };
 
   /* Config class */
   [
@@ -147,4 +172,14 @@ library AU_CommonLib
   {
     [default] interface IDBMan;
   };
+
+  /* Utility class */
+	[
+		uuid(72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B),
+		helpstring("Utility Class")
+	]
+	coclass Utility
+	{
+		[default] interface IUtility;
+	};
 };

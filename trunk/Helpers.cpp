@@ -366,7 +366,7 @@ void AVAR::Attach(const VARIANT &ov)
 
 VARIANT AVAR::Detach()
 { VARIANT r=v;
-  Clear();
+  v.vt = VT_EMPTY;
   return r;
 } /* Detach */
 
