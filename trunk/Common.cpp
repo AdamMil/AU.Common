@@ -42,9 +42,16 @@ CCommonModule _AtlModule;
 
 
 // DLL Entry Point
-extern "C" BOOL WINAPI DllMain(HINSTANCE, DWORD dwReason, LPVOID lpReserved)
-{ g_vMissing.vt=VT_ERROR, g_vMissing.scode=DISP_E_PARAMNOTFOUND;
-  return _AtlModule.DllMain(dwReason, lpReserved); 
+extern "C" BOOL WINAPI DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID lpReserved)
+{ BOOL ret;
+  static int nInit;
+  if(dwReason==DLL_PROCESS_DETACH && !--nInit) g_UnloadConfig();
+  ret = _AtlModule.DllMain(dwReason, lpReserved);
+  if(dwReason==DLL_PROCESS_ATTACH && !nInit++)
+  { g_vMissing.vt=VT_ERROR, g_vMissing.scode=DISP_E_PARAMNOTFOUND;
+    g_InitConfig(hInst);
+  }
+  return ret;
 }
 
 

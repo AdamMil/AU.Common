@@ -39,17 +39,20 @@
   passed, Item will attempt to read from that section. Otherwise, it
   will attempt to read from the current section, as set by `Section'.
   If the read attempt fails, it will fall back to the Default section,
-  if there is one. If the key does not exist, the function will not
-  fail, but will instead return NULL (a variant with a type of VT_NULL).
+  if there is one. If the key does not exist and sType is not specified,
+  the function will not fail, but will instead return NULL (a variant
+  with a type of VT_NULL).
   Item is also the default property, so in many languages, it can be
   used like this:
   <PRE>oConfig(parms) instead of oConfig.Item(parms)</PRE>
 )~ */
 STDMETHODIMP CConfig::get_Item(BSTR sKey, BSTR sType, BSTR sSection, VARIANT *pvOut)
 { if(!pvOut) return E_POINTER;
+  AComLock lock(this);
   AXMLNode node = FindNode(sKey, sSection);
   if(node == NULL)
-  { pvOut->vt=VT_NULL;
+  { if(sType&&sType[0]) return E_FAIL;
+    pvOut->vt=VT_NULL;
     return S_FALSE;
   }
 
@@ -80,6 +83,7 @@ STDMETHODIMP CConfig::get_Item(BSTR sKey, BSTR sType, BSTR sSection, VARIANT *pv
 )~ */
 STDMETHODIMP CConfig::get_Exists(BSTR sKey, BSTR sSection, VARIANT_BOOL *pbExists)
 { if(!pbExists) return E_POINTER;
+  AComLock lock(this);
   *pbExists = FindNode(sKey, sSection) != NULL ? VBTRUE : VBFALSE;
   return S_OK;
 } /* get_Exists */
@@ -95,14 +99,16 @@ STDMETHODIMP CConfig::get_Exists(BSTR sKey, BSTR sSection, VARIANT_BOOL *pbExist
   is the current section.
 )~ */
 STDMETHODIMP CConfig::get_Section(BSTR *psSect)
-{ if(!m_XML)  return E_UNEXPECTED;
-  if(!psSect) return E_POINTER;
+{ if(!psSect) return E_POINTER;
+  AComLock lock(this);
+  if(!m_XML)  return E_UNEXPECTED;
   *psSect = m_Section.ToBSTR();
   return S_OK;
 } /* get_Section */
 
 STDMETHODIMP CConfig::put_Section(BSTR sSect)
-{ if(!m_XML) return E_UNEXPECTED;
+{ AComLock lock(this);
+  if(!m_XML) return E_UNEXPECTED;
   AXMLNode node = m_XML.SelectSingleNode(sSect);
   if(node == NULL) return E_INVALIDARG;
   m_SectXML=node, m_Section=sSect;
@@ -116,7 +122,8 @@ STDMETHODIMP CConfig::put_Section(BSTR sSect)
   of whether or not the configuration could be successfully loaded.
 )~ */
 STDMETHODIMP CConfig::OpenXML(BSTR sXML)
-{ Close();
+{ AComLock lock(this);
+  Close();
   AComPtr<IXMLDOMDocument2> doc;
   HRESULT      hRet;
   VARIANT_BOOL succ;
@@ -124,8 +131,7 @@ STDMETHODIMP CConfig::OpenXML(BSTR sXML)
   CHKRET(CREATE(DOMDocument, IXMLDOMDocument2, doc));
   CHKRET(doc->loadXML(sXML, &succ));
   if(!succ) return E_FAIL;
-  m_XML = doc;
-  return S_OK;
+  return doc->get_firstChild(&m_XML);
 } /* OpenXML */
 
 /* ~(MODULES::CONFIG, f'Config::OpenFile
@@ -139,7 +145,8 @@ STDMETHODIMP CConfig::OpenXML(BSTR sXML)
   regardless of whether or not the configuration could be successfully loaded.
 )~ */
 STDMETHODIMP CConfig::OpenFile(BSTR sPath)
-{ Close();
+{ AComLock lock(this);
+  Close();
   AComPtr<IXMLDOMDocument2> doc;
   HRESULT      hRet;
   VARIANT      var;
@@ -149,8 +156,7 @@ STDMETHODIMP CConfig::OpenFile(BSTR sPath)
   CHKRET(CREATE(DOMDocument, IXMLDOMDocument2, doc));
   CHKRET(doc->load(var, &succ));
   if(!succ) return E_FAIL;
-  m_XML = doc;
-  return S_OK;
+  return doc->get_firstChild(&m_XML);
 } /* OpenFile */
 
 /* ~(MODULES::CONFIG, f'Config::Close
@@ -159,7 +165,8 @@ STDMETHODIMP CConfig::OpenFile(BSTR sPath)
   configuration will be closed when it is no longer needed.
 )~ */
 STDMETHODIMP CConfig::Close()
-{ m_SectXML.Release();
+{ AComLock lock(this);
+  m_SectXML.Release();
   m_XML.Release();
   m_Section.Clear();
   return S_OK;
@@ -168,6 +175,8 @@ STDMETHODIMP CConfig::Close()
 AXMLNode CConfig::FindNode(BSTR sKey, BSTR sSection)
 { AXMLNode node, sect = sSection && sSection[0] ? m_XML.SelectSingleNode(sSection) : m_SectXML;
   if(sect == NULL || ((node=sect.SelectSingleNode(sKey))==NULL) && sect.NodeName() != L"Default")
-    sect = m_XML.SelectSingleNode(ASTR(L"Default")), node = sect.SelectSingleNode(sKey);
+  { sect = m_XML.SelectSingleNode(ASTR(L"Default"));
+    if(sect != NULL) node = sect.SelectSingleNode(sKey);
+  }
   return node;
 } /* FindNode */

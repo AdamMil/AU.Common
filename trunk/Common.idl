@@ -35,8 +35,8 @@ import "ocidl.idl";
 library AU_CommonLib
 {
   importlib("stdole2.tlb");
-  importlib("msado15.dll"); // put these where they can be found
-  importlib("asp.tlb");
+  importlib("msado20.tlb");
+  importlib("asp.tlb"); // put this where it can be found
 
   /* IConfig interface */
   [
@@ -74,8 +74,8 @@ library AU_CommonLib
     [propput,id(1)]  HRESULT ConnSection([in] BSTR sSect);
     [propget,id(2)]  HRESULT ConnKey([out,retval] BSTR *psKey);
     [propput,id(2)]  HRESULT ConnKey([in] BSTR sKey);
-    [propget,id(3)]  HRESULT ConnKey([out,retval] BSTR *psStr);
-    [propput,id(3)]  HRESULT ConnKey([in] BSTR sStr);
+    [propget,id(3)]  HRESULT ConnString([out,retval] BSTR *psStr);
+    [propput,id(3)]  HRESULT ConnString([in] BSTR sStr);
     [propget,id(4)]  HRESULT CursorType([out,retval] int *pnType);
     [propput,id(4)]  HRESULT CursorType([in] int nType);
     [propget,id(5)]  HRESULT LockType([out,retval] int *pnType);

@@ -59,6 +59,7 @@
 #include <atlbase.h>
 #include <atlcom.h>
 #include <msxml2.h>
+#include <initguid.h>
 #include <adoid.h>
 #include <adoint.h>
 namespace ASP
@@ -73,6 +74,8 @@ namespace ASP
 #include <cstdlib>
 #include <cwchar>
 #include <cstring>
+#include <map>
+#include <vector>
 
 #include "Helpers.h"
 #include "Utils.h"
