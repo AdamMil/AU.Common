@@ -18,16 +18,38 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/* ~(MODULES::JS::VALIDATE, f'VAL_Validate
+  <PRE>bool VAL_Validate(frm);</PRE>
+  This method takes a form in 'frm' and validates the elements within it. This
+  method must be used in conjunction with the `INC::VALIDATE::validate.inc' library.
+  There must have been a `INC::VALIDATE::Validator' created for this form and
+  `INC::VALIDATE::Validator::WriteCSCode' called. This method returns true if
+  the validation succeeded and false otherwise (after alert() focusing on the
+  field that failed).
+)~ */
 function VAL_Validate(frm)
 { var i, el=frm.elements, len=el.length;
   for(i=0; i<len; i++) if(!VAL_ValidateField(el[i])) return false;
   return true;
 }
 
+/* ~(MODULES::JS::VALIDATE, f'VAL_Disable
+  <PRE>bool VAL_Disabled(fld);</PRE>
+  This method takes a field in 'fld' and returns true if the field has been
+  disabled. Note that in the validateNS.js implementation, this always returns
+  false.
+)~ */
 function VAL_Disabled(fld)
 { return fld.disabled;
 }
 
+/* ~(MODULES::JS::VALIDATE, f'VAL_Visible
+  <PRE>bool VAL_Visible(fld);</PRE>
+  This method takes a field in 'fld' and returns true if the field is invisible
+  (either because it or an ancestor node has a display:none or visibity:hidden
+  style applied to it). Note that in the validateNS.js implementation, this
+  always returns true.
+)~ */
 function VAL_Visible(fld)
 { while(fld)
   { try
@@ -39,20 +61,36 @@ function VAL_Visible(fld)
   return true;
 }
 
+/* ~(MODULES::JS::VALIDATE, f'VAL_EnableAll
+  <PRE>void VAL_EnableAll(cont, bDisable);</PRE>
+  This method takes a container (like a form) in 'cont' and either disables or
+  enables all INPUT, TEXTAREA, and SELECT elements within it. If bDisabled is
+  true, the fields are disabled. Otherwise, they are enabled.
+)~ */
 function VAL_EnableAll(cont, bDisable)
 { var i, coll = cont.all.tags("INPUT");
-  for(i=0; i<coll.length; i++) VAL_Enable(coll[i], disable);
+  for(i=0; i<coll.length; i++) VAL_Enable(coll[i], bDisable);
   coll = cont.all.tags("TEXTAREA");
-  for(i=0; i<coll.length; i++) VAL_Enable(coll[i], disable);
+  for(i=0; i<coll.length; i++) VAL_Enable(coll[i], bDisable);
   coll = cont.all.tags("SELECT");
-  for(i=0; i<coll.length; i++) VAL_Enable(coll[i], disable);
+  for(i=0; i<coll.length; i++) VAL_Enable(coll[i], bDisable);
 }
 
+/* ~(MODULES::JS::VALIDATE, f'VAL_Enable
+  <PRE>void VAL_Enable(ctl, bDisable);</PRE>
+  This method takes a field in 'fld' and either disables it.
+  If bDisabled is true, the fields is disabled. Otherwise, it is enabled.
+)~ */
 function VAL_Enable(ctl, bDisable)
 { ctl.disabled = bDisable ? true : false;
 }
 
-function VAL_CmbSelect(fld, val)
+/* ~(MODULES::JS::VALIDATE, f'VAL_CmbSelect
+  <PRE>void VAL_CmbSelect(sel, val);</PRE>
+  This method takes a selection box in 'sel' and changes the selection to the
+  item that has a value matching 'val'.
+)~ */
+function VAL_CmbSelect(sel, val)
 { fld.value=val;
 }
 
