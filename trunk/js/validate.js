@@ -394,6 +394,6 @@ function _VAL_CoerceType(val, type) // assumes 'val' is a string
   throw new Error(0, "Unknown type "+type);
 }
 
-function _VAL_InitForm(frm)
-{ alert("_VAL_InitForm not implemented");
+function _VAL_InitForm(vals)
+{ for(var i=0; i<vals.length; i+=2) VAL_CmbSelect(vals[i], vals[i+1]);
 }

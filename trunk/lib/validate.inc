@@ -335,9 +335,21 @@ function _VAL_WriteCSCode()
 
   if(bNeedInit)
   { if(UA_Level>=2) Response.Write("\n<\script>\n");
-    Response.Write("HOOK_addOnLoad(_VAL_InitForm, ");
-    Response.Write(this.FormID);
-    Response.Write(");\n");
+    Response.Write("HOOK_addOnLoad(_VAL_InitForm, new Array(");
+    for(i=0,j=false; i<len; i++)
+    { ctl = ctls[i];
+      if(ctl.Data[_VAL_TYPE]=="select" && ctl.Value != null)
+      { if(j) Response.Write(", ");
+        else j=true;
+        Response.Write(this.FormID);
+        Response.Write('.');
+        Response.Write(ctl.Name);
+        Response.Write(",\"");
+        Response.Write(_VAL_Escape(ctl.Value));
+        Response.Write('\"');
+      }
+    }
+    Response.Write("));\n");
     Response.Write("<\/script>\n");
   }
   else if(UA_Level==1) Response.Write("<\/script>\n");

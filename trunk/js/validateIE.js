@@ -93,15 +93,15 @@ function VAL_Enable(ctl, bDisable)
 )~ */
 function VAL_CmbSelect(sel, val)
 { if(sel.multiple) VAL_CmbSelectMulti(sel, val);
-  else fld.value=val;
+  else sel.value=val;
 }
 
 function VAL_CmbSelectMulti(sel, val)
-{ var vals = new Array();
-  for(var v in val.split(",")) vals[v]=true;
-
-  var i, o=fld.options, len=o.length;
-	for(i=0; i<len; i++) o[i].checked = (vals[o[i].value]==true);
+{ var vals = new Array(), s = val.split(",");
+  var i, len = s.length, o;
+  for(i=0; i<len; i++) vals[s[i].replace(/^\s+|\s+$/g,"")]=true;
+  o=sel.options, len=o.length;
+	for(i=0; i<len; i++) o[i].selected = (vals[o[i].value]==true);
 }
 
 function _VAL_GetAttr(fld, attr)
