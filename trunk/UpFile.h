@@ -23,7 +23,7 @@
 #pragma once
 #include "resource.h"       // main symbols
 
-#include "AU.Common.h"
+#include "Common.h"
 
 
 // CUpFile

@@ -23,7 +23,7 @@
 #pragma once
 #include "resource.h"       // main symbols
 
-#include "AU.Common.h"
+#include "Common.h"
 
 
 // CUpload
@@ -34,8 +34,6 @@ class ATL_NO_VTABLE CUpload :
 	public IDispatchImpl<IUpload, &IID_IUpload, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
-	CUpload()
-
   DECLARE_REGISTRY_RESOURCEID(IDR_UPLOAD)
   DECLARE_NOT_AGGREGATABLE(CUpload)
   BEGIN_COM_MAP(CUpload)

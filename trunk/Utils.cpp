@@ -252,15 +252,19 @@ HRESULT g_EncodeB64(VARIANT &vIn, bool b8bit, ASTR &out)
   }
   
   left   = (U1)len%3;
-  obytes = (left==0) ? len/3*4 : (len+(3-left))/3*4;
+  obytes = (left==0 ? len/3*4 : (len+(3-left))/3*4) + len/76;
   ret    = SysAllocStringLen(NULL, obytes);
   
-  for(i=j=0,len-=left; i<len; buf+=3,j+=4,i+=3)
+  for(i=j=obytes=0,len-=left; i<len; buf+=3,j+=4,i+=3)
   { bin[0]=buf[0], bin[1]=buf[1], bin[2]=buf[2];
     ret[j  ]=s_B64Enc[bin[0]>>2];
     ret[j+1]=s_B64Enc[((bin[0]&3)<<4) | (bin[1]>>4)];
     ret[j+2]=s_B64Enc[((bin[1]&0xF)<<2) | (bin[2]>>6)];
     ret[j+3]=s_B64Enc[bin[2]&0x3F];
+    if(++obytes==19) 
+    { ret[j++ + 4]='\n';
+      obytes = 0;
+    }
   }
 
   if(left==1)
@@ -292,7 +296,7 @@ HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit, AVAR &out)
   }
   if(vIn.vt != VT_BSTR && ((vIn.vt&VT_ARRAY)==0 || vIn.parray->cbElements!=1)) return E_INVALIDARG;
   if(b8bit && vIn.vt==VT_BSTR)
-  { WCHAR *buf=vIn.bstrVal;
+  { WCHAR *buf=vIn.bstrVal, *end;
     len = SysStringLen(vIn.bstrVal);
     if(len==0)
     { out.v.vt=VT_NULL;
@@ -307,20 +311,22 @@ HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit, AVAR &out)
     SAFEARRAY     *sa    = SafeArrayCreate(VT_UI1, 1, &bound);
     U1            *ret   = (U1*)sa->pvData;
     
-    for(i=j=0; i<len; buf+=4,j+=3,i+=4)
-    { bin[0]=s_B64Dec[(U1)buf[0]], bin[1]=s_B64Dec[(U1)buf[1]];
-      bin[2]=s_B64Dec[(U1)buf[2]], bin[3]=s_B64Dec[(U1)buf[3]];
+    for(i=0,end=buf+len; buf<end; i+=3)
+    { for(j=0; j<4; j++)
+      { do bin[j]=s_B64Dec[(U1)*buf++]; while(bin[j]!=255 && buf<end);
+        if(buf==end) break;
+      }
       if(bin[3]==64 || bin[2]==64)
       { if(bin[2] != 64)
-        { ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
-          ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+        { ret[i  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+          ret[i+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
         }
-        else ret[j]=(bin[0]<<2) | ((bin[1]>>4)&3);
+        else ret[i]=(bin[0]<<2) | ((bin[1]>>4)&3);
         break;
       }
-      ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
-      ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
-      ret[j+2]=((bin[2]&3)<<6) | bin[3];
+      ret[i  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+      ret[i+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+      ret[i+2]=((bin[2]&3)<<6) | bin[3];
     }
     
     out.Clear();
@@ -328,7 +334,7 @@ HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit, AVAR &out)
   }
   else if(!b8bit && vIn.vt != VT_BSTR) return E_INVALIDARG;
   else
-  { U1 *buf;
+  { U1 *buf, *end;
     if(vIn.vt==VT_BSTR) buf=(U1*)vIn.bstrVal, len=SysStringByteLen(vIn.bstrVal);
     else buf=(U1*)vIn.parray->pvData, len=vIn.parray->rgsabound[0].cElements;
     if(len==0)
@@ -344,21 +350,22 @@ HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit, AVAR &out)
     SAFEARRAY     *sa    = SafeArrayCreate(VT_UI1, 1, &bound);
     U1            *ret   = (U1*)sa->pvData;
 
-    for(i=j=0; i<len; buf+=4,j+=3,i+=4)
-    { *(U4*)bin = *(U4*)buf;
-      bin[0]=s_B64Dec[bin[0]], bin[1]=s_B64Dec[bin[1]];
-      bin[2]=s_B64Dec[bin[2]], bin[3]=s_B64Dec[bin[3]];
+    for(i=0,end=buf+len; buf<end; i+=3)
+    { for(j=0; j<4; j++)
+      { do bin[j]=s_B64Dec[*buf++]; while(bin[j]!=255 && buf<end);
+        if(buf==end) break;
+      }
       if(bin[3]==64 || bin[2]==64)
       { if(bin[2] != 64)
-        { ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
-          ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+        { ret[i  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+          ret[i+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
         }
-        else ret[j]=(bin[0]<<2) | ((bin[1]>>4)&3);
+        else ret[i]=(bin[0]<<2) | ((bin[1]>>4)&3);
         break;
       }
-      ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
-      ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
-      ret[j+2]=((bin[2]&3)<<6) | bin[3];
+      ret[i  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+      ret[i+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+      ret[i+2]=((bin[2]&3)<<6) | bin[3];
     }
     
     out.Clear();

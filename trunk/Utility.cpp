@@ -191,8 +191,8 @@ STDMETHODIMP CUtility::CheckSHA1(VARIANT vIn, VARIANT vHash, VARIANT_BOOL *pbOK)
   This allows the exact variant type to be determined.
 )~ */
 STDMETHODIMP CUtility::VarType(VARIANT vIn, short *pnType)
-{ if(!pRet) return E_POINTER;
-  *pRet = vIn.vt;
+{ if(!pnType) return E_POINTER;
+  *pnType = vIn.vt;
   return S_OK;
 } /* VarType */
 
