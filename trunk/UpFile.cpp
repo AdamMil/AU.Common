@@ -27,29 +27,29 @@
 // CUpFile
 
 STDMETHODIMP CUpFile::get_FormName(BSTR *psName)
-{
+{ return E_NOTIMPL;
 } /* get_FormName */
 
 STDMETHODIMP CUpFile::get_Filename(BSTR *psName)
-{
+{ return E_NOTIMPL;
 } /* get_Filename */
 
 STDMETHODIMP CUpFile::get_Length(long *pnLen)
-{
+{ return E_NOTIMPL;
 } /* get_Length */
 
 STDMETHODIMP CUpFile::get_MimeType(BSTR *psType)
-{
+{ return E_NOTIMPL;
 } /* get_MimeType */
 
 STDMETHODIMP CUpFile::get_Attribute(BSTR sAttr, BSTR *psVal)
-{
+{ return E_NOTIMPL;
 } /* get_Attribute */
 
 STDMETHODIMP CUpFile::get_Data(VARIANT *pvData)
-{
+{ return E_NOTIMPL;
 } /* get_Data */
 
 STDMETHODIMP CUpFile::Save(BSTR sPath, VARIANT_BOOL bCanClobber)
-{
+{ return E_NOTIMPL;
 } /* Save */

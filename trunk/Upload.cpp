@@ -27,21 +27,21 @@
 // CUpload
 
 STDMETHODIMP CUpload::get_Form(BSTR sItem, VARIANT *pvOut)
-{
+{ return E_NOTIMPL;
 } /* get_Form */
 
 STDMETHODIMP CUpload::get_File(BSTR sItem, IUpFile **ppFile)
-{
+{ return E_NOTIMPL;
 } /* get_File */
 
 STDMETHODIMP CUpload::get_NumFiles(long *pnFiles)
-{
+{ return E_NOTIMPL;
 } /* get_NumFiles */
 
 STDMETHODIMP CUpload::GetFile(long nIndex, IUpFile **ppFile)
-{
+{ return E_NOTIMPL;
 } /* GetFile */
 
 STDMETHODIMP CUpload::OnStartPage(IDispatch *pDisp)
-{
+{ return E_NOTIMPL;
 } /* OnStartPage */

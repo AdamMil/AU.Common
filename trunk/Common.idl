@@ -35,8 +35,8 @@ import "ocidl.idl";
 library AU_CommonLib
 {
   importlib("stdole2.tlb");
-  importlib("msado20.tlb");
-  importlib("asp.tlb"); // put this where it can be found
+  importlib("msado21.tlb"); // put these where they can be found
+  importlib("asp.tlb");
 
   /* IConfig interface */
   [
