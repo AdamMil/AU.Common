@@ -21,6 +21,9 @@
 #include "stdafx.h"
 #include "Helpers.h"
 
+/*** Globals ***/
+VARIANT g_vMissing; // initialized in DllMain (Common.cpp)
+
 /*** ASTR implementation ***/
 ASTR & ASTR::Attach(BSTR str)
 { SysFreeString(m_Str);
@@ -38,6 +41,11 @@ BSTR ASTR::Detach()
   if(ret==EmptyBSTR) ret = SysAllocString(m_Str);
   return ret;
 } /* Detach */
+
+void ASTR::Clear()
+{ SysFreeString(m_Str);
+  Init();
+} /* Clear */
 
 ASTR & ASTR::Format(const WCHAR *ctl, ...)
 { std::va_list list;
@@ -141,7 +149,8 @@ HRESULT AVAR::CopyTo(VARIANT *pv) const
 } /* CopyTo */
 
 HRESULT AVAR::ChangeType(VARTYPE type)
-{ if(v.vt & VT_ARRAY)
+{ if(type==v.vt) return S_OK;
+  if(v.vt & VT_ARRAY)
   { VARIANT tmp;
     HRESULT hRet;
     VariantClear(&tmp);
@@ -152,7 +161,8 @@ HRESULT AVAR::ChangeType(VARTYPE type)
 } /* ChangeType */
 
 HRESULT AVAR::ChangeCopy(VARTYPE type, AVAR &out) const
-{ HRESULT hRet;
+{ if(type==v.vt) return Copy(out);
+  HRESULT hRet;
   VARIANT copy, tmp;
   
   IFS(VariantCopy(&copy, const_cast<VARIANT*>(&v)))

@@ -58,7 +58,6 @@
 #include "resource.h"
 #include <atlbase.h>
 #include <atlcom.h>
-#include <comutil.h>
 #include <msxml2.h>
 #include <adoid.h>
 #include <adoint.h>

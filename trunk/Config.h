@@ -40,7 +40,6 @@ public:
 	}
 
 DECLARE_REGISTRY_RESOURCEID(IDR_CONFIG)
-
 DECLARE_NOT_AGGREGATABLE(CConfig)
 
 BEGIN_COM_MAP(CConfig)
@@ -49,25 +48,35 @@ BEGIN_COM_MAP(CConfig)
 	COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
 END_COM_MAP()
 
-
 	DECLARE_PROTECT_FINAL_CONSTRUCT()
 	DECLARE_GET_CONTROLLING_UNKNOWN()
 
 	HRESULT FinalConstruct()
-	{
-		return CoCreateFreeThreadedMarshaler(
-			GetControllingUnknown(), &m_pUnkMarshaler.p);
+	{ return CoCreateFreeThreadedMarshaler(GetControllingUnknown(), &m_pUnkMarshaler.p);
 	}
 
 	void FinalRelease()
-	{
-		m_pUnkMarshaler.Release();
+	{ m_pUnkMarshaler.Release();
 	}
 
 	CComPtr<IUnknown> m_pUnkMarshaler;
 
 public:
+  // IConfig
+  STDMETHODIMP get_Item(/*[in]*/ BSTR sKey, /*[in,defaultvalue("")]*/ BSTR sType, /*[in,defaultvalue("")]*/ BSTR sSection, /*[out,retval]*/ VARIANT *pvOut);
+  STDMETHODIMP get_Exists(/*[in]*/ BSTR sKey, /*[in,defaultvalue("")]*/ BSTR sSection, /*[out,retval]*/ VARIANT_BOOL *pvBool);
+  STDMETHODIMP get_Section(/*[out,retval]*/ BSTR *psSect);
+  STDMETHODIMP put_Section(/*[in]*/ BSTR sSect);
 
+  STDMETHODIMP OpenXML(/*[in]*/ BSTR sXML);
+  STDMETHODIMP OpenFile(/*[in]*/ BSTR sPath);
+  STDMETHODIMP Close();
+  
+protected:
+  AXMLNode m_XML, m_SectXML;
+  ASTR     m_Section;
+  
+  AXMLNode FindNode(BSTR sKey, BSTR sSection);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Config), CConfig)

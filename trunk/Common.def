@@ -18,7 +18,7 @@
 
 ; Common.def : Declares the module parameters.
 
-LIBRARY      "Common.DLL"
+LIBRARY      "AU.Common.DLL"
 
 EXPORTS
 	DllCanUnloadNow		PRIVATE

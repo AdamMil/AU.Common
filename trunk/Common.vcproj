@@ -36,13 +36,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
+				AdditionalDependencies="msxml2.lib mtxguid.lib adoid.lib"
 				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile=".\Common.def"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeForWindows98="1"
-				ImportLibrary="$(OutDir)/Common.lib"
+				ImportLibrary="$(OutDir)/AU.Common.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -104,6 +105,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
+				AdditionalDependencies="msxml2.lib mtxguid.lib adoid.lib"
 				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile=".\Common.def"
@@ -112,7 +114,7 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
-				ImportLibrary="$(OutDir)/Common.lib"
+				ImportLibrary="$(OutDir)/AU.Common.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"

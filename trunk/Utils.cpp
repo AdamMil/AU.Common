@@ -20,12 +20,18 @@
 
 #include "stdafx.h"
 #include "Utils.h"
+#include "Config.h"
 
+/*** statics ***/
+AComPtr<IConfig> s_Config;
+ACritSec         s_ConfigCS;
+
+/*** rs fields ***/
 HRESULT g_GetField(ADORecordset *rs, UA4 nField, VARIANT *out)
 { VARIANT var;
   var.vt=VT_I4, var.intVal=(int)nField;
   return g_GetField(rs, var, out);
-}
+} /* g_GetField(ADORecordset *, UA4, VARIANT *) */
 
 HRESULT g_GetField(ADORecordset *rs, VARIANT vField, VARIANT *out)
 { assert(out != NULL);
@@ -37,4 +43,19 @@ HRESULT g_GetField(ADORecordset *rs, VARIANT vField, VARIANT *out)
   CHKRET(fields->get_Item(vField, &field));
   CHKRET(field->get_Value(out));
   return hRet;
-}
+} /* g_GetField(ADORecordset *, VARIANT, VARIANT *) */
+
+/*** config ***/
+HRESULT g_InitConfig(const WCHAR *sPath)
+{ AAutoLock lock(s_ConfigCS);
+  HRESULT   hRet;
+  if(!s_Config) CHKRET(CREATE(Config, IConfig, s_Config));
+  return s_Config->OpenFile(ASTR(sPath));
+} /* g_InitConfig */
+
+HRESULT g_Config(BSTR sKey, BSTR sType, BSTR sSection, AVAR &out)
+{ if(!s_Config) return E_UNEXPECTED;
+  AAutoLock lock(s_ConfigCS);
+  out.Clear();
+  return s_Config->get_Item(sKey, sType, sSection, &out);
+} /* g_Config */

@@ -24,4 +24,7 @@
 HRESULT g_GetField(ADORecordset *, UA4 nField, VARIANT *out);
 HRESULT g_GetField(ADORecordset *, VARIANT vField, VARIANT *out);
 
+HRESULT g_InitConfig(const WCHAR *sPath);
+HRESULT g_Config(BSTR sKey, BSTR sType, BSTR sSection, AVAR &out);
+
 #endif
