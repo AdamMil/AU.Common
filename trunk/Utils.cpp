@@ -21,6 +21,7 @@
 #include "stdafx.h"
 #include "Utils.h"
 #include "Config.h"
+#include <mtx.h>
 
 /*** statics ***/
 AComPtr<IConfig> s_Config;
@@ -67,6 +68,35 @@ static const U1  s_B64Dec[256] =
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
+HRESULT g_CreateDB(IDB **ppdb, bool share, const WCHAR *key, const WCHAR *sect)
+{ assert(ppdb);
+  AComPtr<IDBMan> dbman;
+  AVAR            var;
+  HRESULT         hRet = share ? g_ASPSessVar(L"oDBMan", &var) : E_FAIL;
+
+  if(FAILED(hRet) || var.IsEmpty())
+  { if(share)
+    { static AComPtr<IDBMan> man;
+      if(!man) CHKRET(CREATE(DBMan, IDBMan, man));
+      dbman = man;
+    }
+    else
+    { AComPtr<IDB> db;
+      CHKRET(CREATE(DB, IDB, db));
+      if(key &&key [0]) db->put_ConnKey(ASTR(key));
+      if(sect&&sect[0]) db->put_ConnSection(ASTR(sect));
+      db.CopyTo(ppdb);
+      return hRet;
+    }
+  }
+  else
+  { if(var.Type() != VT_DISPATCH) return E_ABORT;
+    CHKRET(DQUERY(var.v.pdispVal, IDBMan, dbman));
+  }
+  hRet = dbman->CreateDB(ASTR(key), ASTR(sect), ppdb);
+  return hRet;
+} /* g_CreateDB */
+
 /*** rs fields ***/
 HRESULT g_GetField(ADORecordset *rs, UA4 nField, VARIANT *out)
 { VARIANT var;
@@ -85,6 +115,61 @@ HRESULT g_GetField(ADORecordset *rs, VARIANT vField, VARIANT *out)
   CHKRET(field->get_Value(out));
   return hRet;
 } /* g_GetField(ADORecordset *, VARIANT, VARIANT *) */
+
+/*** other db stuff ***/
+HRESULT g_DBCheckType(VARIANT *pv, bool alter)
+{ VARTYPE vt = pv->vt;
+  if(vt & VT_ARRAY) return E_INVALIDARG;
+  while((vt&VT_TYPEMASK)==VT_VARIANT)
+  { if(alter)
+    { *pv=*pv->pvarVal, vt=pv->vt;
+      if(vt & VT_ARRAY) return E_INVALIDARG;
+    }
+    else return g_DBCheckType(pv->pvarVal, false);
+  }
+  if(vt==VT_DISPATCH || vt==VT_UNKNOWN || vt>VT_UINT)
+  { if(alter) return VariantChangeType(pv, pv, 0, VT_BSTR);
+    else return E_INVALIDARG;
+  }
+  return S_OK;
+} /* g_DBCheckType */
+
+/*** asp access ***/
+HRESULT g_ASPVar(BSTR sKey, VARIANT *pvout, bool statics, bool bSess)
+{ assert(pvout);
+  static const ASTR props[2] = { L"Application", L"Session" };
+  static const IID *iids[2]  = { &ASP::IID_IApplicationObject, &ASP::IID_ISessionObject };
+
+  AComPtr<IObjectContext>          context;
+  AComPtr<IGetContextProperties>   cp;
+  AComPtr<ASP::ISessionObject>     sess;
+  AComPtr<ASP::IApplicationObject> app;
+  AComPtr<ASP::IVariantDictionary> dict;
+  AVAR    var;
+  HRESULT hRet = GetObjectContext(&context);
+  if(FAILED(hRet) && hRet != CONTEXT_E_NOCONTEXT) return hRet;
+  pvout->vt = VT_EMPTY;
+  if(!context) return S_OK;
+  
+  CHKRET(IQUERY(context, IGetContextProperties, &cp));
+  CHKRET(cp->GetProperty((BSTR)props[bSess].InnerStr(), &var));
+  if(var.Type() != VT_DISPATCH) return E_ABORT;
+  CHKRET(var.v.pdispVal->QueryInterface(*iids[bSess], bSess ? (void**)&sess : (void**)&app));
+  if(sess)
+  { if(statics) CHKRET(sess->get_StaticObjects(&dict))
+    else CHKRET(sess->get_Contents(&dict));
+  }
+  else
+  { if(statics) CHKRET(app->get_StaticObjects(&dict))
+    else CHKRET(app->get_Contents(&dict));
+  }
+
+  var.Clear();
+  var.v.vt=VT_BSTR, var.v.bstrVal=sKey;
+  hRet = dict->get_Item(var, pvout);
+  var.Detach();
+  return hRet;
+} /* g_ASPVar */
 
 /*** config ***/
 HRESULT g_Config(BSTR sKey, BSTR sType, BSTR sSection, AVAR &out)
@@ -115,13 +200,36 @@ HRESULT g_LoadConfig()
 
 void g_UnloadConfig()
 { // have to wrap this because if the xml dll has already been unloaded,
-  // there will be an access violation. the approach is not good, but
+  // there will be an access violation. this approach is not good, but
   // I don't believe there's a way to control the order of COM server
   // loading/unloading or to detect the application end before
   // CoUnitialize is called
   try { s_Config.Release(); } catch(...) { s_Config.p=NULL; }
 } /* g_UnloadConfig */
 
+/*** safearrays ***/
+void g_InitSA(SAFEARRAY *sa, VARIANT *data, U4 els)
+{ assert(sa != NULL);
+  sa->cbElements = sizeof(VARIANT);
+  sa->cDims      = 1;
+  sa->cLocks     = 0;
+  sa->fFeatures  = 0;
+  sa->pvData     = data;
+  sa->rgsabound[0].cElements = els;
+  sa->rgsabound[0].lLbound   = 0;
+} /* g_InitSA */
+
+/*** randomness ***/
+void g_RandBuf(void *b, UA4 len)
+{ U1 *buf = (U1*)b;
+  for(UA4 i=0; i<len; i++) buf[i] = rand() & 0xFF;
+}
+
+void g_RandStr(WCHAR *buf, UA4 len)
+{ for(UA4 i=0; i<len; i++) buf[i] = rand()%95+32;
+}
+
+/*** data conversion ***/
 HRESULT g_StringToBin(BSTR sStr, bool b8bit, AVAR &out)
 { UA4  i, len = SysStringByteLen(sStr);
   if(len==0)
@@ -374,6 +482,7 @@ HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit, AVAR &out)
   return S_OK;
 } /* g_DecodeB64 */
 
+/*** message hashing ***/
 HRESULT g_HashSHA1(VARIANT &vIn, AVAR &out)
 { void *buf;
   UA4   len;

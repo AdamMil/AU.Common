@@ -540,12 +540,17 @@ HRESULT CDB::Init()
   long state;
   CHKRET(m_Conn->get_State(&state));
   if(state == adStateClosed)
-  { BSTR connstr;
+  { BSTR connstr=NULL;
+    ASTR string(L"string");
     AVAR var;
     
     if(m_ConnStr==NULL)
-    { CHKRET(g_Config(m_ConnKey.IsEmpty() ? ASTR(L"DB/Default") : m_ConnKey, ASTR(L"string"), m_ConnSect, var));
-      connstr = var.Detach().bstrVal;
+    { if(!m_ConnKey.IsEmpty())
+        IFS(g_Config(m_ConnKey, ASTR(L"string"), m_ConnSect, var)) connstr=var.Detach().bstrVal;
+      if(connstr==NULL)
+      { IFS(g_Config(ASTR(L"DB/Default"), L"string", m_ConnSect, var)) connstr=var.Detach().bstrVal;
+        else return hRet;
+      }
     }
     else connstr=m_ConnStr;
     hRet = m_Conn->Open(connstr, NULL, NULL, -1);

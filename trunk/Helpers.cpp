@@ -128,6 +128,16 @@ ASTR ASTR::Substring(IA4 start, IA4 end) const
   return ret;
 } /* Substring */
 
+IA4 ASTR::IndexOf(const WCHAR *str) const
+{ WCHAR *s = m_Ref->m_Str, *p = wcsstr(s, str);
+  return p==NULL ? -1 : (IA4)(p-s);
+} /* IndexOf(const WCHAR *) */
+
+IA4 ASTR::IndexOf(WCHAR c) const
+{ WCHAR *s = m_Ref->m_Str, *p = wcschr(s, c);
+  return p==NULL ? -1 : (IA4)(p-s);
+} /* IndexOf(WCHAR) */
+
 ASTRList ASTR::Split(const WCHAR *sep) const
 { assert(sep);
   ASTRList list;

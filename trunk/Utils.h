@@ -21,13 +21,28 @@
 #ifndef AU_COMMON_UTILS_H
 #define AU_COMMON_UTILS_H
 
+struct IDB;
+
+HRESULT g_CreateDB(IDB **, bool share, const WCHAR *key=L"", const WCHAR *sect=L"");
 HRESULT g_GetField(ADORecordset *, UA4 nField, VARIANT *out);
 HRESULT g_GetField(ADORecordset *, VARIANT vField, VARIANT *out);
+HRESULT g_DBCheckType(VARIANT *, bool alter=false);
+
+HRESULT g_ASPVar(BSTR sKey, VARIANT *pvout, bool statics, bool bSess);
+inline HRESULT g_ASPAppVar (BSTR sKey, VARIANT *pvout, bool statics=false) { return g_ASPVar(sKey, pvout, statics, false); }
+inline HRESULT g_ASPSessVar(BSTR sKey, VARIANT *pvout, bool statics=true)  { return g_ASPVar(sKey, pvout, statics, true);  }
 
 HRESULT g_Config(BSTR sKey, BSTR sType, BSTR sSection, AVAR &out);
 void    g_InitConfig(HINSTANCE hInst);
 HRESULT g_LoadConfig();
 void    g_UnloadConfig();
+
+void    g_InitSA(SAFEARRAY *, VARIANT *, U4 els=1);
+
+// TODO: replace random number generator
+inline UA4 g_Rand() { return (UA4)std::rand(); }
+void    g_RandBuf(void *, UA4 len);
+void    g_RandStr(WCHAR *, UA4 len);
 
 HRESULT g_StringToBin(BSTR sStr, bool b8bit /*=true*/, AVAR &out);
 HRESULT g_BinToString(VARIANT &vBin, bool b8bit /*=true*/, ASTR &out);
