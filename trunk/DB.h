@@ -71,6 +71,7 @@ public:
 	STDMETHODIMP get_Connection(/*[out, retval]*/ ADOConnection **pVal);
 	STDMETHODIMP get_Command(/*[out, retval]*/ ADOCommand **pVal);
 	STDMETHODIMP get_IsOpen(/*[out, retval]*/ VARIANT_BOOL *pVal);
+	STDMETHODIMP get_Output(/*[in]*/ BSTR sParam, /*[out,retval]*/ VARIANT *pvOut);
 
   STDMETHODIMP Open();
 	STDMETHODIMP Close();
@@ -78,10 +79,10 @@ public:
   STDMETHODIMP LockDB();
   STDMETHODIMP UnlockDB();
   STDMETHODIMP Execute(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ ADORecordset **pRet);
-  STDMETHODIMP ExecuteNM(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ ADORecordset **pRet);
+  STDMETHODIMP ExecuteO(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ ADORecordset **pRet);
   STDMETHODIMP ExecuteVal(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ VARIANT *pRet);
 	STDMETHODIMP ExecuteNR(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
-	STDMETHODIMP ExecuteNMNR(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
+	STDMETHODIMP ExecuteONR(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
 	
 protected:
   HRESULT Init();
@@ -89,7 +90,7 @@ protected:
   HRESULT DoExecute(ADORecordset **);
   void    ResetDefaults();
   HRESULT FillParams(SAFEARRAY(VARIANT) *aVals);
-  HRESULT FillParamsNM(BSTR sParms, SAFEARRAY(VARIANT) *aVals);
+  HRESULT FillParamsO(BSTR sParms, SAFEARRAY(VARIANT) *aVals);
 
   AComPtr<ADOConnection> m_Conn;
   AComPtr<ADOCommand>    m_Cmd;

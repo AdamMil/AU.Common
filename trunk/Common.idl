@@ -83,6 +83,7 @@ library AU_CommonLib
 		[propget, id(6)] HRESULT Connection([out, retval] _Connection **pVal);
 		[propget, id(7)] HRESULT Command([out, retval] _Command **pVal);
 		[propget, id(8)] HRESULT IsOpen([out, retval] VARIANT_BOOL *pVal);
+		[propget, id(9)] HRESULT Output([in] BSTR sParam, [out,retval] VARIANT *pvOut);
 
     [id(20)] HRESULT Open();
 		[id(21)] HRESULT Close();
@@ -90,10 +91,10 @@ library AU_CommonLib
 		[id(23)] HRESULT UnlockDB();
     [id(25)] HRESULT NewCommand([out, retval] _Command **pVal);
     [vararg, id(30)] HRESULT Execute([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] _Recordset **pRet);
-    [vararg, id(31)] HRESULT ExecuteNM([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] _Recordset **pRet);
+    [vararg, id(31)] HRESULT ExecuteO([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] _Recordset **pRet);
     [vararg, id(32)] HRESULT ExecuteVal([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] VARIANT *pRet);
 		[vararg, id(33)] HRESULT ExecuteNR([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals);
-		[vararg, id(34)] HRESULT ExecuteNMNR([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals);
+		[vararg, id(34)] HRESULT ExecuteONR([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals);
   };
 
   /* IDBMan interface */

@@ -112,6 +112,20 @@ STDMETHODIMP CDB::get_IsOpen(VARIANT_BOOL *pVal)
 	return S_OK;
 } /* get_IsOpen */
 
+STDMETHODIMP CDB::get_Output(BSTR sParam, VARIANT *pvOut)
+{ if(!m_Cmd) return E_UNEXPECTED;
+  if(!pvOut) return E_POINTER;
+  AComPtr<ADOParameters> parms;
+  AComPtr<ADOParameter>  parm;
+  HRESULT hRet;
+  VARIANT var;
+
+  var.vt=VT_BSTR, var.bstrVal=sParam;
+  CHKRET(m_Cmd->get_Parameters(&parms));
+  CHKRET(parms->get_Item(var, &parm))
+  return parm->get_Value(pvOut);
+} /* get_Output */
+
 STDMETHODIMP CDB::Open()
 { return m_bInit ? S_OK : Init();
 } /* Open */
@@ -156,11 +170,11 @@ STDMETHODIMP CDB::Execute(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, ADORecordset **p
   return DoExecute(pRet);
 } /* Execute */
 
-STDMETHODIMP CDB::ExecuteNM(BSTR sSQL, BSTR sNames, SAFEARRAY(VARIANT) *aVals, ADORecordset **pRet)
-{ if(!pRet) return ExecuteNMNR(sSQL, sNames, aVals);
+STDMETHODIMP CDB::ExecuteO(BSTR sSQL, BSTR sNames, SAFEARRAY(VARIANT) *aVals, ADORecordset **pRet)
+{ if(!pRet) return ExecuteONR(sSQL, sNames, aVals);
   HRESULT hRet;
   CHKRET(StartExecute(sSQL));
-  CHKRET(FillParamsNM(sNames, aVals));
+  CHKRET(FillParamsO(sNames, aVals));
   return DoExecute(pRet);
 } /* ExecuteNM */
 
@@ -180,11 +194,11 @@ STDMETHODIMP CDB::ExecuteNR(BSTR sSQL, SAFEARRAY(VARIANT) *aVals)
   return m_Cmd->Execute(NULL, NULL, adExecuteNoRecords, &rs);
 } /* ExecuteNR */
 
-STDMETHODIMP CDB::ExecuteNMNR(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals)
+STDMETHODIMP CDB::ExecuteONR(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals)
 { ARecordset rs;
   HRESULT    hRet;
   CHKRET(StartExecute(sSQL));
-  CHKRET(FillParamsNM(sParms, aVals));
+  CHKRET(FillParamsO(sParms, aVals));
   return m_Cmd->Execute(NULL, NULL, adExecuteNoRecords, &rs);
 } /* ExecuteNMNR */
 
@@ -302,6 +316,7 @@ HRESULT CDB::FillParams(SAFEARRAY **aVals)
   return hRet;
 } /* FillParams */
 
-HRESULT CDB::FillParamsNM(BSTR sParms, SAFEARRAY **aVals)
+
+HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
 { 
-} /* FillParamsNM */
+} /* FillParamsO */
