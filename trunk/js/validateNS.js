@@ -19,8 +19,8 @@
 */
 
 var _VAL_CurArr=null;
-var _VAL_FieldList={"name":0, "desc":1, "maxlength":2, "minlen":3, "clean":4, "nomatch":5,
-                    "nmmsg":6, "match":7, "mmsg":8, "range":9, "execav":10, "execbv":11};
+var _VAL_FieldList={"name":0, "desc":1, "maxlength":2, "minlen":3, "dtype":4, "clean":5, "nomatch":6,
+                    "nmmsg":7, "match":8, "mmsg":9, "range":10, "execbv":11, "execbv":12};
 
 // checks each element in a form using the CheckField() function
 function VAL_Validate(frm)

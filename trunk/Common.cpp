@@ -26,6 +26,12 @@
   MODULES::DBMAN=DBMan Object
   MODULES::UTIL=Utility Object
   MODULES::UPLOAD=Upload/UpFile Objects
+  MODULES::INC=Server-side Javascript Libraries
+  MODULES::INC::BROWSER=Browser detection
+  MODULES::INC::VALIDATE=Validation package
+  MODULES::JS=Client-side Javascript Libraries
+  MODULES::JS::HOOKS=Event chaining
+  MODULES::JS::VALIDATE=Client-side Validation Support
 )~ */
 
 // Common.cpp : Implementation of DLL Exports.
