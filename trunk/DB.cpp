@@ -233,6 +233,29 @@ STDMETHODIMP CDB::get_IsOpen(VARIANT_BOOL *pbOpen)
   return S_OK;
 } /* get_IsOpen */
 
+/* ~(MODULES::DB, p'DB::ParmArray
+  <PRE>[propput] HRESULT ParmArray([in] VARIANT vParms);</PRE>
+  This write-only property expects a VARIANT of either type VT_NULL or
+  VT_ARRAY|VT_VARIANT. Essentially, this property can be used to override
+  the value of 'aVals' in the next Execute*() call. This can be useful if
+  you are using a language that doesn't allow you to pass an array of
+  parameter values to the Execute*() call. If you also have trouble passing
+  an array of parameter values to the ParmArray property, consider using the
+  `VarArray' object to construct one. Passing a variant of type VT_NULL will
+  clear this value, allowing the array passed to Execute*() to take effect.
+  This value will be cleared when Execute*() is called, regardless of whether
+  the Execute*() call was successful or not. If this database object is shared
+  between multiple threads, you will probably want to lock. See `LockDB' for
+  more information.
+)~ */
+STDMETHODIMP CDB::put_ParmArray(VARIANT vParms)
+{ if(vParms.vt==VT_VARIANT || vParms.vt==(VT_VARIANT|VT_BYREF)) vParms = *vParms.pvarVal;
+  if(vParms.vt == VT_NULL) m_Parms.Clear();
+  else if(vParms.vt != (VT_ARRAY|VT_VARIANT)) return E_INVALIDARG;
+  m_Parms = vParms;
+  return S_OK;
+} /* put_ParmArray */
+
 /* ~(MODULES::DB, f'DB::Open
   <PRE>HRESULT Open();</PRE>
   The Open method opens the connection to the database if it is not open already.
@@ -600,16 +623,18 @@ void CDB::ResetDefaults()
 { m_CursorType = adOpenForwardOnly;
   m_LockType   = adLockReadOnly;
   put_Timeout(30);
+  m_Parms.Clear();
 } /* ResetDefaults */
 
 HRESULT CDB::FillParams(SAFEARRAY **aVals)
 { AComPtr<ADOParameters> parms;
   AComPtr<ADOParameter>  parm;
   AVAR       var;
-  SAFEARRAY *array = aVals && *aVals ? *aVals : NULL;
+  SAFEARRAY *array = m_Parms.Type()==(VT_ARRAY|VT_VARIANT) ? m_Parms.v.parray : aVals && *aVals ? *aVals : NULL;
   HRESULT    hRet;
   
   CHKRET(m_Cmd->get_Parameters(&parms));
+  if(array && array->rgsabound[0].cElements==0) array=NULL;
   if(array == NULL || FAILED(hRet=parms->Refresh()))
   { long len=0;
     parms->get_Count(&len);
@@ -660,7 +685,7 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
 { AComPtr<ADOParameters> parms;
   AComPtr<ADOParameter>  parm;
   AVAR       var;
-  SAFEARRAY *array = aVals && *aVals ? *aVals : NULL;
+  SAFEARRAY *array = m_Parms.Type()==(VT_ARRAY|VT_VARIANT) ? m_Parms.v.parray : aVals && *aVals ? *aVals : NULL;
   ASTRList   list;
   ASTR       name;
   VARIANT   *pvar, *vars;
@@ -669,7 +694,7 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   UA4        li, llen=0, vi, nvars=0;
   HRESULT    hRet;
   VARTYPE    vt;
-  
+
   if(sParms[0])
   { list = ASTR(sParms).Split(L",");
     for(li=0,llen=list.Length(); li<llen; li++)

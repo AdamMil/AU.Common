@@ -100,6 +100,7 @@ IDR_UPLOAD              REGISTRY                "Upload.rgs"
 IDR_UPFILE              REGISTRY                "UpFile.rgs"
 IDR_SESSIONMAN          REGISTRY                "SessionMan.rgs"
 IDR_SESSION             REGISTRY                "Session.rgs"
+IDR_VARARRAY            REGISTRY                "VarArray.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //

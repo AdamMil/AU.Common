@@ -35,6 +35,18 @@ CUtility::~CUtility()
   }
 } /* ~CUtility */
 
+/* ~(MODULES::UTIL, p'Utility::MissingVar
+  <PRE>VARIANT MissingVar</PRE>
+  The EmptyVar property returns a "missing" variant suitable for passing to objects
+  that have optional parameters. This is useful for languages like jscript that
+  don't allow you to skip parameters.
+)~ */
+STDMETHODIMP CUtility::get_MissingVar(VARIANT *pvOut)
+{ if(!pvOut) return E_POINTER;
+  *pvOut = g_vMissing;
+  return S_OK;
+} /* get_MissingVar */
+
 /* ~(MODULES::UTIL, f'Utility::StringToBin
   <PRE>HRESULT StringToBin([in] BSTR sStr, [in,defaultvalue(-1)] VARIANT_BOOL b8bit, [out,retval] VARIANT *pvOut);</PRE>
   The StringToBin method converts a string ('sStr') to a binary array (VT_ARRAY|VT_UI1).

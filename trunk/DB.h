@@ -87,6 +87,7 @@ public:
   STDMETHODIMP get_Connection(/*[out, retval]*/ ADOConnection **ppConn);
   STDMETHODIMP get_Command(/*[out, retval]*/ ADOCommand **ppCmd);
   STDMETHODIMP get_IsOpen(/*[out, retval]*/ VARIANT_BOOL *pbOpen);
+  STDMETHODIMP put_ParmArray(/*[in]*/ VARIANT vParms);
 
   STDMETHODIMP Open();
   STDMETHODIMP Close();
@@ -114,6 +115,7 @@ protected:
   AComPtr<ADOCommand>    m_Cmd;
   CComPtr<IUnknown>      m_pUnkMarshaler;
   ASTR m_ConnSect, m_ConnKey;
+  AVAR m_Parms;
   BSTR m_ConnStr;
   UA4  m_nTimeout;
   int  m_CursorType, m_LockType;

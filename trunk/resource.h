@@ -12,6 +12,7 @@
 #define IDR_UPFILE                      107
 #define IDR_SESSIONMAN                  108
 #define IDR_SESSION                     109
+#define IDR_VARARRAY                    110
 
 // Next default values for new objects
 // 
@@ -20,6 +21,6 @@
 #define _APS_NEXT_RESOURCE_VALUE        203
 #define _APS_NEXT_COMMAND_VALUE         32768
 #define _APS_NEXT_CONTROL_VALUE         201
-#define _APS_NEXT_SYMED_VALUE           110
+#define _APS_NEXT_SYMED_VALUE           111
 #endif
 #endif
