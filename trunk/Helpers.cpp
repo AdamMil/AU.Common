@@ -1,6 +1,6 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
-   controls to aid in Web development.
+   controls to aid in COM and Web development.
    Copyright (C) 2002 Adam Milazzo
 
    This library is free software; you can redistribute it and/or
@@ -51,7 +51,7 @@ ASTR ASTRList::Join(const WCHAR *s) const
 
 /*** ASTR implementation ***/
 ASTR & ASTR::Attach(BSTR str)
-{ SysFreeString(m_Str);
+{ if(m_Str != EmptyBSTR) SysFreeString(m_Str);
   if(str)
   { m_Length = m_Max = (UA4)SysStringLen(str);
     m_Str    = str;
@@ -68,12 +68,12 @@ BSTR ASTR::Detach()
 } /* Detach */
 
 void ASTR::Clear()
-{ SysFreeString(m_Str);
+{ if(m_Str != EmptyBSTR) SysFreeString(m_Str);
   Init();
 } /* Clear */
 
 ASTR & ASTR::Format(const WCHAR *ctl, ...)
-{ std::va_list list;
+{ SNP va_list list;
   UA4   len;
   WCHAR buf[4096];
   va_start(list, ctl);
@@ -83,7 +83,7 @@ ASTR & ASTR::Format(const WCHAR *ctl, ...)
   return *this;
 } /* Format(const WCHAR *, ...) */
 
-ASTR & ASTR::Format(const WCHAR *ctl, std::va_list list)
+ASTR & ASTR::Format(const WCHAR *ctl, SNP va_list list)
 { UA4     len;
   WCHAR   buf[4096];
   len = (UA4)vswprintf(buf, ctl, list);
@@ -137,13 +137,25 @@ ASTR ASTR::Substring(IA4 start, IA4 end) const
   return ret;
 } /* Substring */
 
-ASTRList ASTR::Split(const WCHAR *) const
-{
-} /* Split */
+ASTR ASTR::ToLowerCase() const
+{ return ASTR(*this).LowerCase();
+} /* ToLowerCase */
+
+ASTR ASTR::ToUpperCase() const
+{ return ASTR(*this).UpperCase();
+} /* ToUpperCase */
+
+ASTR & ASTR::SetCStr(const char *s)
+{ UA4 len = (UA4)strlen(s);
+  if(len>m_Max) Grow(len);
+  MultiByteToWideChar(CP_ACP, 0, s, (int)len, m_Str, (int)m_Max);
+  m_Str[len]=0;
+  return *this;
+} /* SetCStr */
 
 void ASTR::Reserve(UA4 len)
 { if(m_Max<len)
-  { SysFreeString(m_Str);
+  { if(m_Str != EmptyBSTR) SysFreeString(m_Str);
     if(m_Max==0) m_Max=64;
     while(m_Max<len) m_Max *= 2;
     m_Str = SysAllocStringLen(NULL, m_Max);
@@ -161,7 +173,7 @@ ASTR & ASTR::operator+=(WCHAR c)
 } /* operator+=(WCHAR) */
 
 ASTR ASTR::FormatNew(const WCHAR *ctl, ...)
-{ std::va_list list;
+{ SNP va_list list;
   va_start(list, ctl);
   ASTR tmp;
   tmp.Format(ctl, list);
@@ -175,7 +187,7 @@ void ASTR::Append(const WCHAR *s, UA4 len)
   UA4 nlen = m_Length+len;
 
   if(nlen > m_Max) Grow(nlen);
-  std::wcscat(m_Str+m_Length, s);
+  SNP wcscat(m_Str+m_Length, s);
   SetLength(nlen);
 } /* Append */
 
@@ -183,7 +195,7 @@ void ASTR::Set(const WCHAR *s, UA4 len)
 { assert(s != NULL);
   if(len==(UA4)-1) len=(UA4)wcslen(s);
   if(len>m_Max) Reserve(len);
-  std::memcpy(m_Str, s, len*sizeof(WCHAR));
+  SNP memcpy(m_Str, s, len*sizeof(WCHAR));
   m_Str[len]=0;
   SetLength(len);
 } /* Set */
@@ -193,8 +205,8 @@ void ASTR::Grow(UA4 len)
   while(m_Max<len) m_Max *= 2;
   
   WCHAR *tmp = SysAllocStringLen(NULL, m_Max);
-  std::memcpy(tmp, m_Str, (m_Length+1)*sizeof(WCHAR));
-  SysFreeString(m_Str);
+  SNP memcpy(tmp, m_Str, (m_Length+1)*sizeof(WCHAR));
+  if(m_Str != EmptyBSTR) SysFreeString(m_Str);
   m_Str = tmp;
 } /* Grow */
 
