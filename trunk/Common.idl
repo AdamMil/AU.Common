@@ -94,8 +94,9 @@ library AU_CommonLib
     [vararg,id(30)] HRESULT Execute([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] _Recordset **ppRS);
     [vararg,id(31)] HRESULT ExecuteO([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] _Recordset **ppRS);
     [vararg,id(32)] HRESULT ExecuteVal([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] VARIANT *pvOut);
-    [vararg,id(33)] HRESULT ExecuteNR([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals);
-    [vararg,id(34)] HRESULT ExecuteONR([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals);
+    [vararg,id(33)] HRESULT ExecuteValO([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] VARIANT *pvOut);
+    [vararg,id(34)] HRESULT ExecuteNR([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals);
+    [vararg,id(35)] HRESULT ExecuteONR([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals);
     [id(40)] HRESULT Output([in] BSTR sParam, [out,retval] VARIANT *pvOut);
   };
 
@@ -158,9 +159,8 @@ library AU_CommonLib
   	[propget,id(2)] HRESULT Filename([out,retval] BSTR *psName);
   	[propget,id(3)] HRESULT Length([out,retval] long *pnLen);
   	[propget,id(4)] HRESULT MimeType([out,retval] BSTR *psType);
-  	[propget,id(5)] HRESULT Attribute([in] BSTR sAttr, [out,retval] BSTR *psVal);
-  	[propget,id(6)] HRESULT Data([out,retval] VARIANT *pvData);
-  	[id(7)] HRESULT Save([in] BSTR sPath, [in,defaultvalue(0)] VARIANT_BOOL bCanClobber);
+  	[propget,id(5)] HRESULT Data([out,retval] VARIANT *pvData);
+  	[id(6)] HRESULT Save([in] BSTR sPath, [in,defaultvalue(0)] VARIANT_BOOL bCanClobber);
   };
 
   /* IUpload */
@@ -174,11 +174,69 @@ library AU_CommonLib
   ]
   interface IUpload : IDispatch
   {
-  	[propget,id(0)] HRESULT Form([in] BSTR sItem, [out,retval] VARIANT *pvOut);
-  	[propget,id(1)] HRESULT File([in] BSTR sItem, [out,retval] IUpFile **ppFile);
+  	[propget,id(0)] HRESULT Form([in] BSTR sKey, [out,retval] VARIANT *pvOut);
+  	[propget,id(1)] HRESULT File([in] VARIANT vIndex, [out,retval] IUpFile **ppFile);
   	[propget,id(2)] HRESULT NumFiles([out,retval] long *pnFiles);
-  	[id(10)] HRESULT GetFile([in] long nIndex, [out,retval] IUpFile **ppFile);
-  	[id(20),hidden] HRESULT OnStartPage([in] IDispatch *pDisp);
+  	[propget,id(3)] HRESULT NumFields([out,retval] long *pnFields);
+  	[propget,id(4)] HRESULT FieldKey([in] long nIndex, [out,retval] BSTR *psField);
+
+  	[id(10),hidden] HRESULT OnStartPage([in] IDispatch *pDisp);
+  };
+
+  /* IAUSession */
+  [
+	  object,
+	  uuid(C253C2DA-7B19-4C71-9E25-2911059CA49E),
+	  dual,
+	  nonextensible,
+	  helpstring("IAUSession Interface"),
+	  pointer_default(unique)
+  ]
+  interface IAUSession : IDispatch
+  {
+    [propget,id(0)] HRESULT Item([in] BSTR sKey, [out,retval] VARIANT *pvOut);
+    [propput,id(0)] HRESULT Item([in] BSTR sKey, [in] VARIANT vData);
+    [propget,id(1)] HRESULT SessionID([out,retval] BSTR *psID);
+    [propget,id(2)] HRESULT Section([out,retval] BSTR *psSect);
+    [propput,id(2)] HRESULT Section([in] BSTR sSect);
+    [propget,id(3)] HRESULT Flags([out,retval] long *pnFlags);
+    [propput,id(3)] HRESULT Flags([in] long nFlags);
+    [propget,id(4)] HRESULT Timeout([out,retval] long *pnSecs);
+    [propput,id(4)] HRESULT Timeout([in] long nSecs);
+    [propget,id(5)] HRESULT IsManaged([out,retval] VARIANT_BOOL *pbManaged);
+    [propget,id(6)] HRESULT UsesDB([out,retval] VARIANT_BOOL *pbDB);
+    [propput,id(6)] HRESULT UsesDB([in] VARIANT_BOOL bDB);
+    
+    [id(20)] HRESULT Clear([in] BSTR sSect);
+    [id(21)] HRESULT ClearAll();
+    [id(22)] HRESULT Persist([out,retval] BSTR *psID);
+    [id(23)] HRESULT Revert();
+    [id(24)] HRESULT Save();
+    [id(25)] HRESULT Delete();
+  };
+
+  /* ISessionMan */
+  [
+	  object,
+	  uuid(5E0DB597-EEBF-4D53-8936-F5653302A363),
+	  dual,
+	  nonextensible,
+	  helpstring("ISessionMan Interface"),
+	  pointer_default(unique)
+  ]
+  interface ISessionMan : IDispatch
+  {
+    [propget,id(1)] HRESULT NumSessions([out,retval] long *pnSess);
+    [propget,id(2)] HRESULT Session([in] long nIndex, [out,retval] IAUSession **ppSess);
+    [propget,id(3)] HRESULT Current([out,retval] IAUSession **ppSess);
+
+    [id(10)] HRESULT Init([in,defaultvalue("")] BSTR sConfigKey, [in,defaultvalue(0)] long nFlags);
+    [id(11)] HRESULT CreateSession([in,defaultvalue(0)] VARIANT_BOOL bPersist, [out,retval] IAUSession **ppSess);
+    [id(12)] HRESULT LoadSession([in] BSTR sID, [out,retval] IAUSession **ppSess);
+    [id(13)] HRESULT DropSession([in] BSTR sID);
+
+    [id(20)] HRESULT LockMan();
+    [id(21)] HRESULT UnlockMan();
   };
 
 
@@ -235,10 +293,31 @@ library AU_CommonLib
   /* UpFile class */
   [
   	uuid(CB789D8D-7291-4D7F-AD4C-C423319E4403),
-  	helpstring("UpFile Class")
+  	helpstring("UpFile Class"),
+  	noncreatable
   ]
   coclass UpFile
   {
   	[default] interface IUpFile;
   };
+
+  /* SessionMan */
+	[
+		uuid(16F97D80-2DA0-4D08-8D87-2B4455D4E743),
+		helpstring("SessionMan Class")
+	]
+	coclass SessionMan
+	{
+		[default] interface ISessionMan;
+	};
+
+  /* Session */
+	[
+		uuid(1BD35F98-0C34-4512-B84D-2D111725A86E),
+		helpstring("AUSession Class")
+	]
+	coclass AUSession
+	{
+		[default] interface IAUSession;
+	};
 };

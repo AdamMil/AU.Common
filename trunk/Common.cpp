@@ -25,6 +25,7 @@
   MODULES::DB=DB Object
   MODULES::DBMAN=DBMan Object
   MODULES::UTIL=Utility Object
+  MODULES::UPLOAD=Upload/UpFile Objects
 )~ */
 
 // Common.cpp : Implementation of DLL Exports.

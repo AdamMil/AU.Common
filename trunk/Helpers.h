@@ -34,6 +34,7 @@
 #define CREATENS(ns,c,i,v) (v).CoCreateInstance(ns::CLSID_##c, ns::IID_##i)
 #define IQUERY(v,i,d)      (v).QueryInterface(IID_##i, d)
 #define DQUERY(v,i,d)      (v)->QueryInterface(IID_##i, (void**)&(d))
+#define DQUERYNS(v,n,i,d)  (v)->QueryInterface(n::IID_##i, (void**)&(d))
 
 #define VBTRUE  (-1)
 #define VBFALSE 0
@@ -113,8 +114,10 @@ class ASTR
   ASTR &   LowerCase();
   ASTR &   UpperCase();
 
+  ASTR &   SetCStr(const char *s) { return SetCStr(s, (UA4)std::strlen(s)); }
+  ASTR &   SetCStr(const char *, UA4 len);
   static ASTR FromCStr(const char *s) { ASTR ret; ret.SetCStr(s); return ret; }
-  ASTR &   SetCStr(const char *);
+  static ASTR FromCStr(const char *s, UA4 len) { ASTR ret; ret.SetCStr(s, len); return ret; }
 
   UA4     Length()   const { return m_Ref->m_Length; }
   UA4     BLength()  const { return *((U4*)m_Ref->m_Str-1); }
@@ -174,9 +177,12 @@ class ASTR
 
     void     Append(WCHAR c);
     void     Append(const WCHAR *, UA4 len=(UA4)-1);
+    void     Prepend(WCHAR c);
+    void     Prepend(const WCHAR *, UA4 len=(UA4)-1);
+
     void     Set   (const WCHAR *, UA4 len=(UA4)-1);
     void     Set   (WCHAR c);
-    void     SetCStr(const char *);
+    void     SetCStr(const char *, UA4 len);
 
     void    Reserve(UA4);
     void    SetLength(UA4 len) { m_Length=len, *((U4*)m_Str-1)=(U4)(len<<1); }
@@ -199,24 +205,9 @@ class ASTR
   void CopyOnWrite();
   void New();
 
-  friend bool operator==(const WCHAR *a, const ASTR &b);
-  friend bool operator!=(const WCHAR *a, const ASTR &b);
-  friend bool operator<(const WCHAR *a, const ASTR &b);
-  friend bool operator>(const WCHAR *a, const ASTR &b);
-  friend bool operator<=(const WCHAR *a, const ASTR &b);
-  friend bool operator>=(const WCHAR *a, const ASTR &b);
   friend ASTR operator+(WCHAR c, const ASTR &s);
-  friend ASTR operator+(const WCHAR *a, const ASTR &b);
 };
-
-inline bool operator==(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)==0;  }
-inline bool operator!=(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)!=0;  }
-inline bool operator<(const WCHAR *a, const ASTR &b)  { assert(a != NULL); return wcscmp(a, b)<0;   }
-inline bool operator>(const WCHAR *a, const ASTR &b)  { assert(a != NULL); return wcscmp(a, b)>0;   }
-inline bool operator<=(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)<=0;  }
-inline bool operator>=(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)>=0;  }
-inline ASTR operator+(WCHAR c, const ASTR &s)         { WCHAR buf[2] = {c, 0}; return ASTR(buf)+=s; }
-inline ASTR operator+(const WCHAR *a, const ASTR &b)  { assert(a != NULL); return ASTR(a)+=b;       }
+inline ASTR operator+(WCHAR c, const ASTR &s) { WCHAR buf[2] = {c, 0}; return ASTR(buf)+=s; }
 
 /* AComPtr */
 template<typename T>
@@ -427,7 +418,7 @@ class AAutoLock
 class AComLock
 { public:
   typedef ATL::CComObjectRootEx<ATL::CComMultiThreadModel> obj;
-  AComLock(obj *p, bool locked=false) { m_O=p; m_bLocked=locked; if(!locked) p->Lock(); }
+  AComLock(obj *p, bool locked=false) { m_O=p; if(!(m_bLocked=locked)) Lock(); }
  ~AComLock() { if(m_bLocked) m_O->Unlock(); }
   
   void Lock()   { assert(!m_bLocked); m_O->Lock();   m_bLocked=true;  }

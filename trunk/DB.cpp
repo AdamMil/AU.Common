@@ -121,7 +121,10 @@ STDMETHODIMP CDB::put_ConnString(BSTR sStr)
   This property determines what the ADO cursor type will be for the next Execute* call. It
   accepts and returns values from the ADO cursor type enum. This value will be reset to
   the default after the next Execute* call (successful or not). This defaults to
-  adOpenForwardOnly.
+  adOpenForwardOnly. Using a cursor type that indicates a connected recordset (adOpenKeyset
+  or adOpenDynamic) is generally not a good idea for a database object that will be shared
+  among multiple threads, because if the DB object is closed, the connected recordset will
+  be invalidated.
 )~ */
 STDMETHODIMP CDB::get_CursorType(int *pnType)
 { if(!pnType) return E_POINTER;
@@ -143,7 +146,10 @@ STDMETHODIMP CDB::put_CursorType(int nType)
   This property determines what the ADO lock type will be for the next Execute* call. It
   accepts and returns values from the ADO lock type enum. This value will be reset to
   the default after the next Execute* call (successful or not). This defaults to
-  adLockReadOnly.
+  adLockReadOnly. Using a lock type that indicates a connected recordset (anything besides
+  adLockReadOnly) is generally not a good idea for a database object that will be shared
+  among multiple threads, because if the DB object is closed, the connected recordset will
+  be invalidated.
 )~ */
 STDMETHODIMP CDB::get_LockType(int *pnType)
 { if(!pnType) return E_POINTER;
@@ -367,10 +373,10 @@ STDMETHODIMP CDB::Execute(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, ADORecordset **p
   query.  This method is similar to `Execute', but it does not support '?'
   replacement. Instead it supports a more powerful method that allows the use of
   input/output/inout parameters. This method has all of the benefits associated with
-  '?' replacement described in the help for `Execute'.  Output and in/out parameters
-  can be accessed after the query has completed by using the `Output' method. Remember
-  that This also avoids the extra round trip to the database engine. With this
-  function, a list of parameter names is passed in 'sParms'.  'sParms' is in the
+  '?' replacement described in the help for `Execute'. In addition, it also avoids
+  extra round trip to the database engine needed for '?' replacement. Output and in/out
+  parameters can be accessed after the query has completed by using the `Output' method.
+  With this function, a list of parameter names is passed in 'sParms'.  'sParms' is in the
   following format:
   <PRE>
   Pname[=[type][/size]],Pname[=[type][/size]],Pname[=[type][/size]]...
@@ -391,7 +397,8 @@ STDMETHODIMP CDB::Execute(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, ADORecordset **p
   is problematic for in/out parameters that are variable-width, because the size
   would specify both the input and output sizes, which probably won't be the
   same. It's best to stay away from in/out parameters except for simple scalar
-  types.
+  types, although with many providers, you can safely use variable width output/inout
+  parameters.
   
   An example 'sParms' string is the following, which has two input parameters
   and an output parameter, which is of type adBoolean:
@@ -408,11 +415,13 @@ STDMETHODIMP CDB::Execute(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, ADORecordset **p
   When using queries, instead of stored procedures, here is an example:
   <PRE>oRS = oDB.ExecuteO("SELECT * FROM t1 WHERE col1=@1 and col2=@2 and col3=@1",
                    "@1,@2", 5, "hello");</PRE>
+
   Queries can't have output or in/out parameters, for obvious reasons. However, there
   is still a performance benefit from using ExecuteO* methods instead of the standard
   Execute* ones. Note how parameters can be reused with the ExecuteO* functions. The
   @1 parameter is passed once and used twice. Also, in the query text, the parameters
-  are always prefixed with @.
+  are always prefixed with @. Note that using named parameters with queries is not
+  supported by all providers.
 )~ */
 STDMETHODIMP CDB::ExecuteO(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals, ADORecordset **ppRS)
 { if(!ppRS) return E_POINTER;
@@ -427,7 +436,7 @@ STDMETHODIMP CDB::ExecuteO(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals, AD
 } /* ExecuteO */
 
 /* ~(MODULES::DB, f'DB::ExecuteVal
-  <PRE>HRESULT ExecuteVal([in] BSTR sSQL, [out,retval] VARIANT *pvOut);</PRE>
+  <PRE>HRESULT ExecuteVal([in] BSTR sSQL, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] VARIANT *pvOut);</PRE>
   The ExecuteVal method is a shortcut. It works by calling `Execute' and
   returning the value of the first column in the first row of whatever the
   recordset is.
@@ -438,6 +447,21 @@ STDMETHODIMP CDB::ExecuteVal(BSTR sSQL, SAFEARRAY(VARIANT) *aVals, VARIANT *pvOu
   HRESULT    hRet;
   AComLock lock(this);
   CHKRET(Execute(sSQL, aVals, &rs));
+  return g_GetField(rs, 0, pvOut);
+} /* ExecuteVal */
+
+/* ~(MODULES::DB, f'DB::ExecuteValO
+  <PRE>HRESULT ExecuteValO([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals, [out,retval] VARIANT *pvOut);</PRE>
+  The ExecuteValO method is a shortcut. It works by calling `ExecuteO' and
+  returning the value of the first column in the first row of whatever the
+  recordset is.
+)~ */
+STDMETHODIMP CDB::ExecuteValO(BSTR sSQL, BSTR sParms, SAFEARRAY(VARIANT) *aVals, VARIANT *pvOut)
+{ if(!pvOut) return E_POINTER;
+  ARecordset rs;
+  HRESULT    hRet;
+  AComLock lock(this);
+  CHKRET(ExecuteO(sSQL, sParms, aVals, &rs));
   return g_GetField(rs, 0, pvOut);
 } /* ExecuteVal */
 
@@ -609,7 +633,11 @@ HRESULT CDB::FillParams(SAFEARRAY **aVals)
       if(vt > VT_UINT) return E_INVALIDARG;
       type = m_dbTypes[vt];
       if(vt & VT_ARRAY) type &= 0x2000;
-      size = (vt==VT_BSTR ? SysStringLen(pvar->bstrVal) : 1);
+      if(vt==VT_BSTR)
+      { size = SysStringLen(pvar->bstrVal);
+        if(size==0) size=1;
+      }
+      else size=1;
 
       CHKRET(m_Cmd->CreateParameter((BSTR)ASTR::EmptyBSTR, (DataTypeEnum)type, adParamInput, size, *pvar, &parm));
       CHKRET(parms->Append(parm));
@@ -624,18 +652,21 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   AComPtr<ADOParameter>  parm;
   AVAR       var;
   SAFEARRAY *array = aVals && *aVals ? *aVals : NULL;
-  ASTRList   list = ASTR(sParms).Split(L",");
+  ASTRList   list;
   ASTR       name;
   VARIANT   *pvar, *vars;
   WCHAR     *pc, *p2;
   long       len=0, size, type;
-  UA4        li, vi, nvars=0;
+  UA4        li, llen=0, vi, nvars=0;
   HRESULT    hRet;
   VARTYPE    vt;
   
-  for(li=0; li<list.Length(); li++)
-  { if(list[li].Length()<2) return E_INVALIDARG;
-    if(list[li][0]==L'@' || list[li][0]==L'+') nvars++;
+  if(sParms[0])
+  { list = ASTR(sParms).Split(L",");
+    for(li=0,llen=list.Length(); li<llen; li++)
+    { if(list[li].Length()<2) return E_INVALIDARG;
+      if(list[li][0]==L'@' || list[li][0]==L'+') nvars++;
+    }
   }
   if(nvars && (!array || array->rgsabound[0].cElements != nvars)) return E_INVALIDARG;
 
@@ -646,11 +677,16 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
   if(array == NULL) return S_FALSE;
   vars = (VARIANT*)array->pvData;
   
-  for(li=vi=0; li<list.Length(); li++)
-  { ASTR &s = list[li], name = (WCHAR*)s+1, fc=s[0];
+  for(li=vi=0; li<llen; li++)
+  { ASTR &s = list[li], name = (WCHAR*)s+1;
+    WCHAR fc=s[0];
     if(fc==L'@' || fc==L'+')
     { pvar = (vars[vi].vt&VT_BYREF) ? vars[vi].pvarVal : vars+vi, vt = pvar->vt;
-      size = (vt==VT_BSTR ? SysStringLen(pvar->bstrVal) : 1);
+      if(vt==VT_BSTR)
+      { size = SysStringLen(pvar->bstrVal);
+        if(size==0) size=1;
+      }
+      else size=1;
       if(vt > VT_UINT) return E_INVALIDARG;
       type = m_dbTypes[vt];
       if(vt & VT_ARRAY) type &= 0x2000;

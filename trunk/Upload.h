@@ -26,7 +26,24 @@
 #include "Common.h"
 
 
-// CUpload
+/* ~(MODULES::UPLOAD, c'Upload
+  The Upload object (ProgID AU.Common.Upload) provides a simple way to access
+  files uploaded to an ASP page. The Upload object should be created on the
+  page with a Server.CreateObject() call. Since the object uses the raw request
+  data, the Request.Form collection cannot be accessed if the Upload object has
+  been created. ASP will throw an exception. Similarly, if the Request.Form
+  collection has been accessed, the object will throw an exception upon creation.
+  However, you can use the `Form', `NumFields', and `FieldKey' properties to
+  retrieve form data as well as iterate through the form. Files can be accessed
+  by ordinal or by form field name. Files are represented by `UpFile' objects.
+  In order for file uploading to work, you need to use the multipart/form-data
+  encoding type for your form. For example:
+  <PRE><form method="post" enctype="multipart/form-data">...</form></PRE>
+  The Upload object uses the "apartment" threading model. LIMITATIONS: This
+  object does not support multiple fields/files with the same name (only one
+  will be seen) or filenames with embedded quotes.
+  The Upload object uses the apartment threading model.
+)~ */
 
 class ATL_NO_VTABLE CUpload : 
   public CComObjectRootEx<CComSingleThreadModel>,
@@ -44,14 +61,29 @@ public:
 
 // IUpload
 public:
-  STDMETHODIMP get_Form(/*[in]*/ BSTR sItem, /*[out,retval]*/ VARIANT *pvOut);
-  STDMETHODIMP get_File(/*[in]*/ BSTR sItem, /*[out,retval]*/ IUpFile **ppFile);
+  STDMETHODIMP get_Form(/*[in]*/ BSTR sKey, /*[out,retval]*/ VARIANT *pvOut);
+  STDMETHODIMP get_File(/*[in]*/ VARIANT vIndex, /*[out,retval]*/ IUpFile **ppFile);
   STDMETHODIMP get_NumFiles(/*[out,retval]*/ long *pnFiles);
-  STDMETHODIMP GetFile(/*[in]*/ long nIndex, /*[out,retval]*/ IUpFile **ppFile);
+  STDMETHODIMP get_NumFields(/*[out,retval]*/ long *pnFields);
+  STDMETHODIMP get_FieldKey(/*[in]*/ long nIndex, /*[out,retval]*/ BSTR *psField);
   STDMETHODIMP OnStartPage(/*[in]*/ IDispatch *pDisp);
   
 protected:
+  UA4 URLDecode(char *start, char *end);
+
+  struct Item
+  { ASTR  Name, ContentType, FileName;
+    U1   *Data;
+    UA4   Len;
+  };
   
+  typedef std::map<ASTR, Item> Map;
+  typedef std::pair<ASTR, Item> MapPair;
+
+  AVAR m_vData;
+  Map  m_mForm, m_mFiles;
+  
+  friend class CUpFile;
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Upload), CUpload)

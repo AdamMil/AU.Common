@@ -24,9 +24,14 @@
 #include "resource.h"       // main symbols
 
 #include "Common.h"
+#include "Upload.h"
 
-
-// CUpFile
+/* ~(MODULES::UPLOAD, c'UpFile
+  The UpFile object (ProgID AU.Common.UpFile - noncreatable) represents a single
+  file as read by the `Upload' object. The data from the file can be accessed directly,
+  or the file can be saved. This object should not be created directly. The UpFile
+  object uses the apartment threading model.
+)~ */
 
 class ATL_NO_VTABLE CUpFile : 
   public CComObjectRootEx<CComSingleThreadModel>,
@@ -48,9 +53,16 @@ public:
   STDMETHODIMP get_Filename(/*[out,retval]*/ BSTR *psName);
   STDMETHODIMP get_Length(/*[out,retval]*/ long *pnLen);
   STDMETHODIMP get_MimeType(/*[out,retval]*/ BSTR *psType);
-  STDMETHODIMP get_Attribute(/*[in]*/ BSTR sAttr, /*[out,retval]*/ BSTR *psVal);
   STDMETHODIMP get_Data(/*[out,retval]*/ VARIANT *pvData);
   STDMETHODIMP Save(/*[in]*/ BSTR sPath, /*[in,defaultvalue(0)]*/ VARIANT_BOOL bCanClobber);
+
+protected:
+  void Load(CUpload *par, const CUpload::Item *item);
+  
+  AComPtr<IUpload> m_Parent;
+  const CUpload::Item *m_Item;
+  
+  friend class CUpload;
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(UpFile), CUpFile)
