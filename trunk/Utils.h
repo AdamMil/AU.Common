@@ -1,7 +1,7 @@
 /* 
    This file is part of the AU.Common library, a set of ActiveX
    controls and C++ classes used to aid in COM and Web development.
-   Copyright (C) 2002 Adam Milazzo
+   Copyright (C) 2002 Adam Milazzo - http://www.adammil.net
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,8 @@ HRESULT g_GetField(ADORecordset *, UA4 nField, VARIANT *out);
 HRESULT g_GetField(ADORecordset *, VARIANT vField, VARIANT *out);
 HRESULT g_DBCheckType(VARIANT *, bool alter=false);
 
+HRESULT g_SessVar(BSTR sKey, VARIANT *pvout, bool statics=true);
+HRESULT g_AUSessVar(BSTR sKey, VARIANT *pvout);
 HRESULT g_ASPVar(BSTR sKey, VARIANT *pvout, bool statics, bool bSess);
 inline HRESULT g_ASPAppVar (BSTR sKey, VARIANT *pvout, bool statics=false) { return g_ASPVar(sKey, pvout, statics, false); }
 inline HRESULT g_ASPSessVar(BSTR sKey, VARIANT *pvout, bool statics=true)  { return g_ASPVar(sKey, pvout, statics, true);  }
