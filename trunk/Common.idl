@@ -194,18 +194,22 @@ library AU_CommonLib
   ]
   interface IAUSession : IDispatch
   {
-    [propget,id(0)] HRESULT Item([in] BSTR sKey, [out,retval] VARIANT *pvOut);
-    [propput,id(0)] HRESULT Item([in] BSTR sKey, [in] VARIANT vData);
-    [propget,id(1)] HRESULT SessionID([out,retval] BSTR *psID);
-    [propget,id(2)] HRESULT Section([out,retval] BSTR *psSect);
-    [propput,id(2)] HRESULT Section([in] BSTR sSect);
-    [propget,id(3)] HRESULT Flags([out,retval] long *pnFlags);
-    [propput,id(3)] HRESULT Flags([in] long nFlags);
-    [propget,id(4)] HRESULT Timeout([out,retval] long *pnSecs);
-    [propput,id(4)] HRESULT Timeout([in] long nSecs);
-    [propget,id(5)] HRESULT IsManaged([out,retval] VARIANT_BOOL *pbManaged);
-    [propget,id(6)] HRESULT UsesDB([out,retval] VARIANT_BOOL *pbDB);
-    [propput,id(6)] HRESULT UsesDB([in] VARIANT_BOOL bDB);
+    [propget,id(0)]  HRESULT Item([in] BSTR sKey, [out,retval] VARIANT *pvOut);
+    [propput,id(0)]  HRESULT Item([in] BSTR sKey, [in] VARIANT vData);
+    [propget,id(1)]  HRESULT SessionID([out,retval] BSTR *psID);
+    [propget,id(2)]  HRESULT Section([out,retval] BSTR *psSect);
+    [propput,id(2)]  HRESULT Section([in] BSTR sSect);
+    [propget,id(3)]  HRESULT Flags([out,retval] long *pnFlags);
+    [propput,id(3)]  HRESULT Flags([in] long nFlags);
+    [propget,id(4)]  HRESULT Timeout([out,retval] long *pnSecs);
+    [propput,id(4)]  HRESULT Timeout([in] long nSecs);
+    [propget,id(5)]  HRESULT IsManaged([out,retval] VARIANT_BOOL *pbManaged);
+    [propget,id(6)]  HRESULT UsesDB([out,retval] VARIANT_BOOL *pbDB);
+    [propput,id(6)]  HRESULT UsesDB([in] VARIANT_BOOL bDB);
+    [id(7)]          HRESULT ResetSectEnum();
+    [id(8)]          HRESULT ResetKeyEnum([in] BSTR sSect);
+    [propget,id(9)]  HRESULT NextSection([out,retval] VARIANT *pvSect);
+    [propget,id(10)] HRESULT NextKey([out,retval] VARIANT *pvKey);
     
     [id(20)] HRESULT Clear([in] BSTR sSect);
     [id(21)] HRESULT ClearAll();
@@ -213,6 +217,9 @@ library AU_CommonLib
     [id(23)] HRESULT Revert();
     [id(24)] HRESULT Save();
     [id(25)] HRESULT Delete();
+    [id(26)] HRESULT LockSession();
+    [id(27)] HRESULT UnlockSession();
+    [id(28)] HRESULT LoadKeysFromDB();
   };
 
   /* ISessionMan */

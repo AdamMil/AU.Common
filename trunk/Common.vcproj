@@ -36,7 +36,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="msxml2.lib mtxguid.lib"
+				AdditionalDependencies="msxml2.lib mtxguid.lib mtx.lib"
 				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile=".\Common.def"
@@ -105,7 +105,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="msxml2.lib mtxguid.lib"
+				AdditionalDependencies="msxml2.lib mtxguid.lib mtx.lib"
 				OutputFile="$(OutDir)/AU_Common.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile=".\Common.def"
@@ -176,7 +176,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="msxml2.lib mtxguid.lib"
+				AdditionalDependencies="msxml2.lib mtxguid.lib mtx.lib"
 				OutputFile="$(OutDir)/AU_Common.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile=".\Common.def"
@@ -297,6 +297,9 @@
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
+			<File
+				RelativePath="BlockAlloc.h">
+			</File>
 			<File
 				RelativePath="Config.h">
 			</File>

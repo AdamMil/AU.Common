@@ -62,6 +62,33 @@ typedef unsigned         UA4; // ditto
 typedef int              IMI; // machine int
 typedef unsigned         UMI;
 
+#define I1_MIN (-127-1)
+#define I1_MAX   127
+#define U1_MIN   0U
+#define U1_MAX   255
+#define I2_MIN (-32767-1)
+#define I2_MAX   32767
+#define U2_MIN   0U
+#define U2_MAX   65535
+#define I4_MIN (-2147483647L-1)
+#define I4_MAX   2147483647L
+#define U4_MIN   0U
+#define U4_MAX   4294967295UL
+#define UA1_MIN 0U
+#define UA2_MIN 0U
+#define UA4_MIN 0U
+
+// assumptions...
+#define IA1_MIN I4_MIN
+#define IA1_MAX I4_MAX
+#define UA1_MAX U4_MAX
+#define IA2_MIN I4_MIN
+#define IA2_MAX I4_MAX
+#define UA2_MAX U4_MAX
+#define IA4_MIN I4_MIN
+#define IA4_MAX I4_MAX
+#define UA4_MAX U4_MAX
+
 template<typename T> T Min(T a, T b) { return a<b ? a : b; }
 template<typename T> T Max(T a, T b) { return a<b ? b : a; }
 template<typename T> void Swap(T &a, T &b) { T t=a; a=b, b=t; }
@@ -96,6 +123,8 @@ class ASTR
 
   operator WCHAR *()             { return m_Ref->m_Str; }
   operator const WCHAR *() const { return m_Ref->m_Str; }
+  WCHAR * InnerStr()             { return m_Ref->m_Str; }
+  const WCHAR * InnerStr() const { return m_Ref->m_Str; }
 
   ASTR &  Attach(BSTR str);
   BSTR    Detach();
@@ -108,6 +137,8 @@ class ASTR
   ASTR     Substr(IA4 start)          const { return Substring(start, (IA4)Length()-1);  }
   ASTR     Substr(IA4 start, UA4 len) const { return Substring(start, start+(IA4)len-1); }
   ASTR     Substring(IA4 start, IA4 end) const;
+  IA4      IndexOf(const WCHAR *str) const;
+  IA4      IndexOf(WCHAR) const;
   ASTRList Split(const WCHAR *) const;
   ASTR     ToLowerCase() const;
   ASTR     ToUpperCase() const;
