@@ -1,26 +1,26 @@
 HKCR
 {
-	AU.Common.DBMan.1 = s 'DBMan Class'
-	{
-		CLSID = s '{E4FAE717-A310-460D-A30B-E38698E79A45}'
-	}
-	AU.Common.DBMan = s 'DBMan Class'
-	{
-		CLSID = s '{E4FAE717-A310-460D-A30B-E38698E79A45}'
-		CurVer = s 'AU.Common.DBMan.1'
-	}
-	NoRemove CLSID
-	{
-		ForceRemove {E4FAE717-A310-460D-A30B-E38698E79A45} = s 'DBMan Class'
-		{
-			ProgID = s 'AU.Common.DBMan.1'
-			VersionIndependentProgID = s 'AU.Common.DBMan'
-			ForceRemove 'Programmable'
-			InprocServer32 = s '%MODULE%'
-			{
-				val ThreadingModel = s 'Both'
-			}
-			'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
-		}
-	}
+  AU.Common.DBMan.1 = s 'DBMan Class'
+  {
+  	CLSID = s '{E4FAE717-A310-460D-A30B-E38698E79A45}'
+  }
+  AU.Common.DBMan = s 'DBMan Class'
+  {
+  	CLSID = s '{E4FAE717-A310-460D-A30B-E38698E79A45}'
+  	CurVer = s 'AU.Common.DBMan.1'
+  }
+  NoRemove CLSID
+  {
+  	ForceRemove {E4FAE717-A310-460D-A30B-E38698E79A45} = s 'DBMan Class'
+  	{
+  		ProgID = s 'AU.Common.DBMan.1'
+  		VersionIndependentProgID = s 'AU.Common.DBMan'
+  		ForceRemove 'Programmable'
+  		InprocServer32 = s '%MODULE%'
+  		{
+  			val ThreadingModel = s 'Both'
+  		}
+  		'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
+  	}
+  }
 }

@@ -29,16 +29,16 @@
 // CUpload
 
 class ATL_NO_VTABLE CUpload : 
-	public CComObjectRootEx<CComSingleThreadModel>,
-	public CComCoClass<CUpload, &CLSID_Upload>,
-	public IDispatchImpl<IUpload, &IID_IUpload, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
+  public CComObjectRootEx<CComSingleThreadModel>,
+  public CComCoClass<CUpload, &CLSID_Upload>,
+  public IDispatchImpl<IUpload, &IID_IUpload, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
   DECLARE_REGISTRY_RESOURCEID(IDR_UPLOAD)
   DECLARE_NOT_AGGREGATABLE(CUpload)
   BEGIN_COM_MAP(CUpload)
-	  COM_INTERFACE_ENTRY(IUpload)
-	  COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(IUpload)
+    COM_INTERFACE_ENTRY(IDispatch)
   END_COM_MAP()
   DECLARE_PROTECT_FINAL_CONSTRUCT()
 

@@ -1,26 +1,26 @@
 HKCR
 {
-	AUCommon.Utility.1 = s 'Utility Class'
-	{
-		CLSID = s '{72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B}'
-	}
-	AUCommon.Utility = s 'Utility Class'
-	{
-		CLSID = s '{72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B}'
-		CurVer = s 'AUCommon.Utility.1'
-	}
-	NoRemove CLSID
-	{
-		ForceRemove {72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B} = s 'Utility Class'
-		{
-			ProgID = s 'AUCommon.Utility.1'
-			VersionIndependentProgID = s 'AUCommon.Utility'
-			ForceRemove 'Programmable'
-			InprocServer32 = s '%MODULE%'
-			{
-				val ThreadingModel = s 'Apartment'
-			}
-			'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
-		}
-	}
+  AUCommon.Utility.1 = s 'Utility Class'
+  {
+  	CLSID = s '{72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B}'
+  }
+  AUCommon.Utility = s 'Utility Class'
+  {
+  	CLSID = s '{72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B}'
+  	CurVer = s 'AUCommon.Utility.1'
+  }
+  NoRemove CLSID
+  {
+  	ForceRemove {72EDBF5D-48A2-472E-84D9-7FCBF0F3C14B} = s 'Utility Class'
+  	{
+  		ProgID = s 'AUCommon.Utility.1'
+  		VersionIndependentProgID = s 'AUCommon.Utility'
+  		ForceRemove 'Programmable'
+  		InprocServer32 = s '%MODULE%'
+  		{
+  			val ThreadingModel = s 'Apartment'
+  		}
+  		'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
+  	}
+  }
 }

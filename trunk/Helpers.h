@@ -222,8 +222,8 @@ inline ASTR operator+(const WCHAR *a, const ASTR &b)  { assert(a != NULL); retur
 template<typename T>
 class _NoAddRefReleaseOnAComPtr : public T
 { private:
-		STDMETHODIMP_(ULONG) AddRef()  { };
-		STDMETHODIMP_(ULONG) Release() { };
+  	STDMETHODIMP_(ULONG) AddRef()  { };
+  	STDMETHODIMP_(ULONG) Release() { };
 };
 
 template<typename T>

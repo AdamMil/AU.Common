@@ -29,18 +29,18 @@
 // CUpFile
 
 class ATL_NO_VTABLE CUpFile : 
-	public CComObjectRootEx<CComSingleThreadModel>,
-	public CComCoClass<CUpFile, &CLSID_UpFile>,
-	public IDispatchImpl<IUpFile, &IID_IUpFile, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
+  public CComObjectRootEx<CComSingleThreadModel>,
+  public CComCoClass<CUpFile, &CLSID_UpFile>,
+  public IDispatchImpl<IUpFile, &IID_IUpFile, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
   DECLARE_REGISTRY_RESOURCEID(IDR_UPFILE)
   DECLARE_NOT_AGGREGATABLE(CUpFile)
   BEGIN_COM_MAP(CUpFile)
-	  COM_INTERFACE_ENTRY(IUpFile)
-	  COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(IUpFile)
+    COM_INTERFACE_ENTRY(IDispatch)
   END_COM_MAP()
-	DECLARE_PROTECT_FINAL_CONSTRUCT()
+  DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 // IUpFile
 public:

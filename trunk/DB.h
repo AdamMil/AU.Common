@@ -41,9 +41,9 @@
 )~ */
 
 class ATL_NO_VTABLE CDB : 
-	public CComObjectRootEx<CComMultiThreadModel>,
-	public CComCoClass<CDB, &CLSID_DB>,
-	public IDispatchImpl<IDB, &IID_IDB, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
+  public CComObjectRootEx<CComMultiThreadModel>,
+  public CComCoClass<CDB, &CLSID_DB>,
+  public IDispatchImpl<IDB, &IID_IDB, &LIBID_AU_CommonLib, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
 public:
   CDB();
@@ -53,52 +53,52 @@ public:
   DECLARE_NOT_AGGREGATABLE(CDB)
 
   BEGIN_COM_MAP(CDB)
-	  COM_INTERFACE_ENTRY(IDB)
-	  COM_INTERFACE_ENTRY(IDispatch)
-	  COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+    COM_INTERFACE_ENTRY(IDB)
+    COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
   END_COM_MAP()
 
-	DECLARE_PROTECT_FINAL_CONSTRUCT()
-	DECLARE_GET_CONTROLLING_UNKNOWN()
+  DECLARE_PROTECT_FINAL_CONSTRUCT()
+  DECLARE_GET_CONTROLLING_UNKNOWN()
 
-	HRESULT FinalConstruct()
-	{ return CoCreateFreeThreadedMarshaler(GetControllingUnknown(), &m_pUnkMarshaler.p);
-	}
+  HRESULT FinalConstruct()
+  { return CoCreateFreeThreadedMarshaler(GetControllingUnknown(), &m_pUnkMarshaler.p);
+  }
 
-	void FinalRelease()
-	{ m_pUnkMarshaler.Release();
-	}
+  void FinalRelease()
+  { m_pUnkMarshaler.Release();
+  }
 
 public:
   // IDB
   STDMETHODIMP get_ConnSection(/*[out, retval]*/ BSTR *psSect);
-	STDMETHODIMP put_ConnSection(/*[in]*/ BSTR sSect);
-	STDMETHODIMP get_ConnKey(/*[out, retval]*/ BSTR *psKey);
-	STDMETHODIMP put_ConnKey(/*[in]*/ BSTR sKey);
-	STDMETHODIMP get_ConnString(/*[out, retval]*/ BSTR *psStr);
-	STDMETHODIMP put_ConnString(/*[in]*/ BSTR sStr);
-	STDMETHODIMP get_CursorType(/*[out, retval]*/ int *pnType);
-	STDMETHODIMP put_CursorType(/*[in]*/ int nType);
-	STDMETHODIMP get_LockType(/*[out, retval]*/ int *pnType);
-	STDMETHODIMP put_LockType(/*[in]*/ int nType);
-	STDMETHODIMP get_Timeout(/*[out, retval]*/ long *pnTimeout);
-	STDMETHODIMP put_Timeout(/*[in]*/ long nTimeout);
-	STDMETHODIMP get_Connection(/*[out, retval]*/ ADOConnection **ppConn);
-	STDMETHODIMP get_Command(/*[out, retval]*/ ADOCommand **ppCmd);
-	STDMETHODIMP get_IsOpen(/*[out, retval]*/ VARIANT_BOOL *pbOpen);
+  STDMETHODIMP put_ConnSection(/*[in]*/ BSTR sSect);
+  STDMETHODIMP get_ConnKey(/*[out, retval]*/ BSTR *psKey);
+  STDMETHODIMP put_ConnKey(/*[in]*/ BSTR sKey);
+  STDMETHODIMP get_ConnString(/*[out, retval]*/ BSTR *psStr);
+  STDMETHODIMP put_ConnString(/*[in]*/ BSTR sStr);
+  STDMETHODIMP get_CursorType(/*[out, retval]*/ int *pnType);
+  STDMETHODIMP put_CursorType(/*[in]*/ int nType);
+  STDMETHODIMP get_LockType(/*[out, retval]*/ int *pnType);
+  STDMETHODIMP put_LockType(/*[in]*/ int nType);
+  STDMETHODIMP get_Timeout(/*[out, retval]*/ long *pnTimeout);
+  STDMETHODIMP put_Timeout(/*[in]*/ long nTimeout);
+  STDMETHODIMP get_Connection(/*[out, retval]*/ ADOConnection **ppConn);
+  STDMETHODIMP get_Command(/*[out, retval]*/ ADOCommand **ppCmd);
+  STDMETHODIMP get_IsOpen(/*[out, retval]*/ VARIANT_BOOL *pbOpen);
 
   STDMETHODIMP Open();
-	STDMETHODIMP Close();
+  STDMETHODIMP Close();
   STDMETHODIMP NewCommand(/*[out, retval]*/ ADOCommand **ppCmd);
   STDMETHODIMP LockDB();
   STDMETHODIMP UnlockDB();
   STDMETHODIMP Execute(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ ADORecordset **ppRS);
   STDMETHODIMP ExecuteO(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ ADORecordset **ppRS);
   STDMETHODIMP ExecuteVal(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals, /*[out,retval]*/ VARIANT *pRet);
-	STDMETHODIMP ExecuteNR(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
-	STDMETHODIMP ExecuteONR(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
-	STDMETHODIMP Output(/*[in]*/ BSTR sParam, /*[out,retval]*/ VARIANT *pvOut);
-	
+  STDMETHODIMP ExecuteNR(/*[in]*/ BSTR sSQL, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
+  STDMETHODIMP ExecuteONR(/*[in]*/ BSTR sSQL, /*[in]*/ BSTR sParms, /*[in]*/ SAFEARRAY(VARIANT) *aVals);
+  STDMETHODIMP Output(/*[in]*/ BSTR sParam, /*[out,retval]*/ VARIANT *pvOut);
+  
 protected:
   HRESULT Init();
   HRESULT StartExecute(BSTR sSQL);
@@ -109,7 +109,7 @@ protected:
 
   AComPtr<ADOConnection> m_Conn;
   AComPtr<ADOCommand>    m_Cmd;
-	CComPtr<IUnknown>      m_pUnkMarshaler;
+  CComPtr<IUnknown>      m_pUnkMarshaler;
   ASTR m_ConnSect, m_ConnKey;
   BSTR m_ConnStr;
   UA4  m_nTimeout;
