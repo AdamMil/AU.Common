@@ -46,7 +46,8 @@ ASTR ASTRList::Join(const WCHAR *s) const
   slen = (UA4)wcslen(s), total = slen*(len-1);
   for(i=0; i<len; i++) total += m_Vec[i].Length();
   ret.Reserve(total);
-  for(i=0; i<len; i++) ret += m_Vec[i];
+  if(slen>0) for(i=0; i<len; i++) { if(i>0) ret.Append(s, slen); ret += m_Vec[i]; }
+  else for(i=0; i<len; i++) ret += m_Vec[i];
   return ret;
 } /* Join */
 
@@ -97,8 +98,8 @@ ASTR & ASTR::Format(const WCHAR *ctl, SNP va_list list)
 
 ASTR & ASTR::Replace(const WCHAR *find, const WCHAR *rep)
 { assert(find && rep);
+  if(m_Ref->m_Length==0 || find[0]==0) return *this;
   UA4 flen=(UA4)wcslen(find), rlen=(UA4)wcslen(rep);
-  if(flen==0) return *this;
   WCHAR *q=m_Ref->m_Str, *p=wcsstr(m_Ref->m_Str, find);
   if(!p) return *this;
 
@@ -143,13 +144,7 @@ IA4 ASTR::IndexOf(WCHAR c) const
 ASTRList ASTR::Split(const WCHAR *sep) const
 { assert(sep);
   ASTRList list;
-  if(!sep[0])
-  { WCHAR c;
-    for(UA4 i=0,len=Length(); i<len; i++)
-    { c=m_Ref->m_Str[i];
-      list.Add(&c, 1);
-    }
-  }
+  if(sep[0]==0) for(UA4 i=0,len=Length(); i<len; i++) list.Add(&m_Ref->m_Str[i], 1);
   else
   { ASTR   tmp;
     WCHAR *p, *q=m_Ref->m_Str;
@@ -291,14 +286,17 @@ void ASTR::ASTRRef::Replace(const WCHAR *find, const WCHAR *rep, WCHAR *p, UA4 f
 { assert(m_Refs==1);
   UA4 rbytes=rlen*sizeof(WCHAR);
   if(flen > rlen)
-  { WCHAR *q;
-    UA4    diff=flen-rlen, dbytes=diff*sizeof(WCHAR), nrem=0;
-    do
+  { const TCHAR *r=p+flen, *m;
+    UA4    diff=flen-rlen, nrem=0, len;
+    while(true)
     { nrem += diff;
-      memcpy(p, rep, rbytes);
-      q = wcsstr(p+=flen, find);
-      memmove(p+rlen, p, (q==NULL ? m_Str+m_Length-p : q-p)*sizeof(WCHAR));
-    } while((p=q) != NULL);
+      std::memcpy(p, rep, rbytes);
+      m = wcsstr(r, find);
+      len = (m==NULL ? m_Str+m_Length-r : m-r);
+      std::memmove(p+=rlen, r, len*sizeof(WCHAR));
+      if(m == NULL) break;
+      p += len, r = m+flen;
+    }
     m_Str[m_Length-nrem]=0;
     SetLength(m_Length-nrem);
   }
@@ -310,6 +308,7 @@ void ASTR::ASTRRef::SetCStr(const char *s, UA4 len)
   if(len>m_Max) Grow(len);
   MultiByteToWideChar(CP_ACP, 0, s, (int)len, m_Str, (int)m_Max);
   m_Str[len]=0;
+  SetLength(len);
 } /* SetCStr */
 
 void ASTR::ASTRRef::Reserve(UA4 len)
@@ -329,8 +328,10 @@ void ASTR::ASTRRef::UpdateLength()
 } /* UpdateLength */
 
 void ASTR::ASTRRef::Append(WCHAR c)
-{ if(m_Length==m_Max) Grow(m_Max+Max(m_Max/4, (UA4)64));
-  m_Str[m_Length++]=c, m_Str[m_Length]=0;
+{ assert(m_Refs==1);
+  if(m_Length==m_Max) Grow(m_Max+64);
+  m_Str[m_Length]=c, m_Str[m_Length+1]=0;
+  SetLength(m_Length+1);
 } /* Append(WCHAR) */
 
 void ASTR::ASTRRef::Append(const WCHAR *s, UA4 len)
