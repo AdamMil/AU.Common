@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.00"
-	Name="Common"
+	Name="AU.Common"
 	ProjectGUID="{8D135E8B-A364-4997-B11D-58785F02D979}"
 	Keyword="AtlProj">
 	<Platforms>
@@ -36,7 +36,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				OutputFile="$(OutDir)/Common.dll"
+				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile=".\Common.def"
 				GenerateDebugInformation="TRUE"
@@ -104,7 +104,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				OutputFile="$(OutDir)/Common.dll"
+				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile=".\Common.def"
 				GenerateDebugInformation="TRUE"
@@ -164,6 +164,9 @@
 				RelativePath="DB.cpp">
 			</File>
 			<File
+				RelativePath="DBMan.cpp">
+			</File>
+			<File
 				RelativePath="Helpers.cpp">
 			</File>
 			<File
@@ -195,6 +198,9 @@
 				RelativePath="DB.h">
 			</File>
 			<File
+				RelativePath="DBMan.h">
+			</File>
+			<File
 				RelativePath="Helpers.h">
 			</File>
 			<File
@@ -221,6 +227,9 @@
 			</File>
 			<File
 				RelativePath="DB.rgs">
+			</File>
+			<File
+				RelativePath="DBMan.rgs">
 			</File>
 			<File
 				RelativePath="LICENSE.txt">

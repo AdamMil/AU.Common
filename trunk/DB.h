@@ -50,8 +50,7 @@ END_COM_MAP()
 	DECLARE_GET_CONTROLLING_UNKNOWN()
 
 	HRESULT FinalConstruct()
-	{ return CoCreateFreeThreadedMarshaler(
-			GetControllingUnknown(), &m_pUnkMarshaler.p);
+	{ return CoCreateFreeThreadedMarshaler(GetControllingUnknown(), &m_pUnkMarshaler.p);
 	}
 
 	void FinalRelease()
@@ -60,10 +59,10 @@ END_COM_MAP()
 
 public:
   // IDB
-  STDMETHODIMP get_ConnectionKey(/*[out, retval]*/ BSTR *pVal);
-	STDMETHODIMP put_ConnectionKey(/*[in]*/ BSTR newVal);
-	STDMETHODIMP get_ConnectionValue(/*[out, retval]*/ BSTR *pVal);
-	STDMETHODIMP put_ConnectionValue(/*[in]*/ BSTR newVal);
+  STDMETHODIMP get_ConnSection(/*[out, retval]*/ BSTR *pVal);
+	STDMETHODIMP put_ConnSection(/*[in]*/ BSTR newVal);
+	STDMETHODIMP get_ConnKey(/*[out, retval]*/ BSTR *pVal);
+	STDMETHODIMP put_ConnKey(/*[in]*/ BSTR newVal);
 	STDMETHODIMP get_CursorType(/*[out, retval]*/ int *pVal);
 	STDMETHODIMP put_CursorType(/*[in]*/ int newVal);
 	STDMETHODIMP get_LockType(/*[out, retval]*/ int *pVal);
@@ -96,7 +95,7 @@ protected:
   AComPtr<ADOConnection> m_Conn;
   AComPtr<ADOCommand>    m_Cmd;
 	CComPtr<IUnknown>      m_pUnkMarshaler;
-  ASTR m_ConnKey, m_ConnVal;
+  ASTR m_ConnSect, m_ConnKey;
   UA4  m_nTimeout;
   int  m_CursorType, m_LockType;
   bool m_bInit;
