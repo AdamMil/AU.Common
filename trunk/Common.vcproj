@@ -24,7 +24,7 @@
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;_USRDLL"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				TreatWChar_tAsBuiltInType="TRUE"
 				ForceConformanceInForLoopScope="TRUE"
 				UsePrecompiledHeader="3"
@@ -106,7 +106,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
 				AdditionalDependencies="msxml2.lib mtxguid.lib mtx.lib"
-				OutputFile="$(OutDir)/AU_Common.dll"
+				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile=".\Common.def"
 				GenerateDebugInformation="TRUE"
@@ -177,7 +177,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
 				AdditionalDependencies="msxml2.lib mtxguid.lib mtx.lib"
-				OutputFile="$(OutDir)/AU_Common.dll"
+				OutputFile="$(OutDir)/AU.Common.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile=".\Common.def"
 				GenerateDebugInformation="TRUE"
@@ -408,64 +408,64 @@
 			<File
 				RelativePath="VarArray.rgs">
 			</File>
-		</Filter>
-		<Filter
-			Name="Generated Files"
-			SourceControlFiles="FALSE">
-			<File
-				RelativePath="Common_i.c">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release P2+|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="documentation.html">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating documentation..."
-						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
+			<Filter
+				Name="Generated Files"
+				SourceControlFiles="FALSE">
+				<File
+					RelativePath="Common_i.c">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release P2+|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="documentation.html">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCustomBuildTool"
+							Description="Generating documentation..."
+							CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
 "
-						AdditionalDependencies="*.h *.cpp"
-						Outputs="$(ProjectDir)\documentation.html"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating documentation..."
-						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
+							AdditionalDependencies="*.h *.cpp"
+							Outputs="$(ProjectDir)\documentation.html"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCustomBuildTool"
+							Description="Generating documentation..."
+							CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
 "
-						AdditionalDependencies="*.h *.cpp"
-						Outputs="$(ProjectDir)\documentation.html"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release P2+|Win32">
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating documentation..."
-						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
+							AdditionalDependencies="*.h *.cpp"
+							Outputs="$(ProjectDir)\documentation.html"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release P2+|Win32">
+						<Tool
+							Name="VCCustomBuildTool"
+							Description="Generating documentation..."
+							CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
 "
-						AdditionalDependencies="*.h *.cpp"
-						Outputs="$(ProjectDir)\documentation.html"/>
-				</FileConfiguration>
-			</File>
+							AdditionalDependencies="*.h *.cpp"
+							Outputs="$(ProjectDir)\documentation.html"/>
+					</FileConfiguration>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>

@@ -86,6 +86,8 @@ library AU_CommonLib
     [propget,id(8)]  HRESULT Command([out,retval] _Command **ppCmd);
     [propget,id(9)]  HRESULT IsOpen([out,retval] VARIANT_BOOL *pbOpen);
     [propput,id(10)] HRESULT ParmArray([in] VARIANT vParms);
+    [propget,id(11)]  HRESULT Disconnected([out,retval] VARIANT_BOOL *pbDisc);
+    [propput,id(11)]  HRESULT Disconnected([in] VARIANT_BOOL bDisc);
 
     [id(20)] HRESULT Open();
     [id(21)] HRESULT Close();
