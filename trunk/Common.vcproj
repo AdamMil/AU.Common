@@ -88,6 +88,77 @@
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="0"
+				OptimizeForProcessor="0"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_USRDLL"
+				StringPooling="TRUE"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				TreatWChar_tAsBuiltInType="TRUE"
+				ForceConformanceInForLoopScope="TRUE"
+				UsePrecompiledHeader="3"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				IgnoreImportLibrary="TRUE"
+				AdditionalDependencies="msxml2.lib mtxguid.lib"
+				OutputFile="$(OutDir)/AU_Common.dll"
+				LinkIncremental="1"
+				ModuleDefinitionFile=".\Common.def"
+				GenerateDebugInformation="TRUE"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				ImportLibrary="$(OutDir)/AU.Common.lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="FALSE"
+				TargetEnvironment="1"
+				GenerateStublessProxies="TRUE"
+				TypeLibraryName="$(IntDir)/Common.tlb"
+				HeaderFileName="Common.h"
+				DLLDataFileName=""
+				InterfaceIdentifierFileName="Common_i.c"
+				ProxyFileName="Common_p.c"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Performing registration"
+				CommandLine="regsvr32 /s /c &quot;$(TargetPath)&quot;"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="$(IntDir)"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release P2+|Win32"
+			OutputDirectory="Release P2+"
+			IntermediateDirectory="Release P2+"
+			ConfigurationType="2"
+			UseOfATL="1"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
+			<Tool
+				Name="VCCLCompilerTool"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				FavorSizeOrSpeed="0"
 				OptimizeForProcessor="2"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_USRDLL"
 				StringPooling="TRUE"
@@ -172,7 +243,22 @@
 				RelativePath="Helpers.cpp">
 			</File>
 			<File
+				RelativePath="Utility.cpp">
+			</File>
+			<File
 				RelativePath="Utils.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						FavorSizeOrSpeed="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release P2+|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						FavorSizeOrSpeed="1"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="stdafx.cpp">
@@ -184,6 +270,12 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release P2+|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="1"/>
@@ -207,6 +299,9 @@
 			</File>
 			<File
 				RelativePath="Resource.h">
+			</File>
+			<File
+				RelativePath="Utility.h">
 			</File>
 			<File
 				RelativePath="Utils.h">
@@ -236,6 +331,9 @@
 			<File
 				RelativePath="LICENSE.txt">
 			</File>
+			<File
+				RelativePath="Utility.rgs">
+			</File>
 		</Filter>
 		<Filter
 			Name="Generated Files"
@@ -254,6 +352,12 @@
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release P2+|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="documentation.html">
@@ -262,7 +366,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating documentation..."
-						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp"
+						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
+"
 						AdditionalDependencies="*.h *.cpp"
 						Outputs="$(ProjectDir)\documentation.html"/>
 				</FileConfiguration>
@@ -271,7 +376,18 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating documentation..."
-						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp"
+						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
+"
+						AdditionalDependencies="*.h *.cpp"
+						Outputs="$(ProjectDir)\documentation.html"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release P2+|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating documentation..."
+						CommandLine="perl c:\code\autodoc.pl -o $(ProjectDir) -p &quot;$(ProjectName)&quot; $(ProjectDir)\*.h $(ProjectDir)\*.cpp
+"
 						AdditionalDependencies="*.h *.cpp"
 						Outputs="$(ProjectDir)\documentation.html"/>
 				</FileConfiguration>

@@ -24,6 +24,7 @@
   MODULES::CONFIG=Config Object
   MODULES::DB=DB Object
   MODULES::DBMAN=DBMan Object
+  MODULES::UTIL=Utility Object
 )~ */
 
 // Common.cpp : Implementation of DLL Exports.

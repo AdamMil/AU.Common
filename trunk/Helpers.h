@@ -117,6 +117,7 @@ class ASTR
   ASTR &   SetCStr(const char *);
 
   UA4     Length()   const { return m_Ref->m_Length; }
+  UA4     BLength()  const { return *((U4*)m_Ref->m_Str-1); }
   UA4     Capacity() const { return m_Ref->m_Max;    }
   void    Reserve(UA4);
   void    SetLength(UA4 len);

@@ -67,8 +67,8 @@ STDMETHODIMP CConfig::get_Item(BSTR sKey, BSTR sType, BSTR sSection, VARIANT *pv
     else if(sType==L"bool")   hRet=data.ChangeType(VT_BOOL);
     else if(sType==L"date")   hRet=data.ChangeType(VT_DATE);
     else if(sType==L"bigint") hRet=data.ChangeType(VT_I8);
-    else if(sType==L"base64") ; // TODO: add base64 decoder
-    else if(sType==L"hex")    ; // TODO: add hex decoder
+    else if(sType==L"base64") hRet=g_DecodeB64(data, true, data);
+    else if(sType==L"hex")    hRet=g_HexToBin(data.ToBSTR(), data);
   }
   if(SUCCEEDED(hRet)) *pvOut = data.Detach();
   return hRet;
