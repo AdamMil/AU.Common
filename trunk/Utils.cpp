@@ -48,7 +48,7 @@ static const U1  s_B64Enc[64] =
   119, 120, 121, 122, 48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  43,  47
 };
 
-static const U1  s_B64Dec[234] =
+static const U1  s_B64Dec[256] =
 { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 62,  255, 255, 255, 63,
@@ -63,7 +63,8 @@ static const U1  s_B64Dec[234] =
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
 /*** rs fields ***/
@@ -229,67 +230,141 @@ HRESULT g_BinToHex(VARIANT &vBin, bool b8bit, ASTR &out)
   return S_OK;
 } /* g_BinToHex */
 
-/*Public Sub EncodeB64(ByRef FileIn() As Byte, ByRef Out() As Byte)
-'declarations
-ReDim Out(BytesOut - 1)
-For i = 0 To Lenght - Remaining - 1 Step 3
-    '3 bytes in
-    bin(0) = FileIn(i)
-    bin(1) = FileIn(i + 1)
-    bin(2) = FileIn(i + 2)
-    '4 bytes out
-    Out(iTemp) = Base64Tab((bin(0) \ 4) And &H3F)
-    Out(iTemp + 1) = Base64Tab((bin(0) And &H3) * 16 Or (bin(1) \ 16) And &HF)
-    Out(iTemp + 2) = Base64Tab((bin(1) And &HF) * 4 Or (bin(2) \ 64) And &H3)
-    Out(iTemp + 3) = Base64Tab(bin(2) And &H3F)
-    iTemp = iTemp + 4
-Next
-If Remaining = 1 Then ' if there is 1 byte remaining
-    'read 1 byte, the second in 0
-    bin(0) = FileIn(UBound(FileIn))
-    bin(1) = 0
-    Out(UBound(Out) - 3) = Base64Tab((bin(0) \ 4) And &H3F)
-    Out(UBound(Out) - 2) = Base64Tab((bin(0) And &H3) * 16 Or (bin(1) \ 16) And &HF)
-    Out(UBound(Out) - 1) = 61
-    Out(UBound(Out)) = 61
-ElseIf Remaining = 2 Then 'if there are 2 bytes remaining
-    'read 2 bytes, the third is 0
-    bin(0) = FileIn(UBound(FileIn) - 1)
-    bin(1) = FileIn(UBound(FileIn))
-    bin(2) = 0
-    Out(UBound(Out) - 3) = Base64Tab((bin(0) \ 4) And &H3F)
-    Out(UBound(Out) - 2) = Base64Tab((bin(0) And &H3) * 16 Or (bin(1) \ 16) And &HF)
-    Out(UBound(Out) - 1) = Base64Tab((bin(1) And &HF) * 4 Or (bin(2) \ 64) And &H3)
-    Out(UBound(Out)) = 61
-End If
-End Sub*/
-HRESULT g_EncodeB64(VARIANT &vIn, bool b8bit, AVAR &out)
+HRESULT g_EncodeB64(VARIANT &vIn, bool b8bit, ASTR &out)
 { U1  *buf;
-  UA4  i, iTemp, len, obytes
+  BSTR ret;
+  UA4  i, j, len, obytes;
+  AVAR var;
   UA1  left;
   U1   bin[3];
-  AVAR var;
 
+  if(vIn.vt != VT_BSTR && ((vIn.vt&VT_ARRAY)==0 || vIn.parray->cbElements!=1)) return E_INVALIDARG;
   if(vIn.vt==VT_BSTR)
   { if(b8bit)
     { g_StringToBin(vIn.bstrVal, true, var);
-      buf = (U1*)var.v.parray->pvData, len = var.v.parray->rgsbounds[0].cElements;
+      buf = (U1*)var.v.parray->pvData, len = var.v.parray->rgsabound[0].cElements;
     }
-    else buf = vIn.bstrVal, len = SysStringByteLen(vIn.bstrVal);
+    else buf = (U1*)vIn.bstrVal, len = SysStringByteLen(vIn.bstrVal);
   }
   else
   { if(!b8bit) return E_INVALIDARG;
-    buf = (U1*)vIn.parray->pvData, len = vIn.parray->rgsbounds[0].cElements;
+    buf = (U1*)vIn.parray->pvData, len = vIn.parray->rgsabound[0].cElements;
   }
   
   left   = (U1)len%3;
   obytes = (left==0) ? len/3*4 : (len+(3-left))/3*4;
+  ret    = SysAllocStringLen(NULL, obytes);
+  
+  for(i=j=0,len-=left; i<len; buf+=3,j+=4,i+=3)
+  { bin[0]=buf[0], bin[1]=buf[1], bin[2]=buf[2];
+    ret[j  ]=s_B64Enc[bin[0]>>2];
+    ret[j+1]=s_B64Enc[((bin[0]&3)<<4) | (bin[1]>>4)];
+    ret[j+2]=s_B64Enc[((bin[1]&0xF)<<2) | (bin[2]>>6)];
+    ret[j+3]=s_B64Enc[bin[2]&0x3F];
+  }
 
-  return E_NOTIMPL;
+  if(left==1)
+  { bin[0]=*buf;
+    ret[j  ]=s_B64Enc[bin[0]>>2];
+    ret[j+1]=s_B64Enc[(bin[0]&3)<<4];
+    ret[j+2]=ret[j+3]=61;
+  }
+  else if(left==2)
+  { bin[0]=buf[0], bin[1]=buf[1];
+    ret[j  ]=s_B64Enc[bin[0]>>2];
+    ret[j+1]=s_B64Enc[((bin[0]&3)<<4)|(bin[1]>>4)];
+    ret[j+2]=s_B64Enc[(bin[1]&0xF)<<2];
+    ret[j+3]=61;
+  }
+
+  out.Attach(ret);
+  return S_OK;
 } /* g_EncodeB64 */
 
 HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit, AVAR &out)
-{ return E_NOTIMPL;
+{ U1  bin[4];
+  UA4 i, j, len, obytes=0;
+  UA1 left=0;
+
+  if(vIn.vt==VT_NULL)
+  { out.v.vt=VT_NULL;
+    return S_OK;
+  }
+  if(vIn.vt != VT_BSTR && ((vIn.vt&VT_ARRAY)==0 || vIn.parray->cbElements!=1)) return E_INVALIDARG;
+  if(b8bit && vIn.vt==VT_BSTR)
+  { WCHAR *buf=vIn.bstrVal;
+    len = SysStringLen(vIn.bstrVal);
+    if(len==0)
+    { out.v.vt=VT_NULL;
+      return S_OK;
+    }
+    if(buf[len-1]==61)
+    { left++;
+      if(buf[len-2]==61) left++;
+    }
+
+    SAFEARRAYBOUND bound = { len*4/3, 0 };
+    SAFEARRAY     *sa    = SafeArrayCreate(VT_UI1, 1, &bound);
+    U1            *ret   = (U1*)sa->pvData;
+    
+    for(i=j=0; i<len; buf+=4,j+=3,i+=4)
+    { bin[0]=s_B64Dec[(U1)buf[0]], bin[1]=s_B64Dec[(U1)buf[1]];
+      bin[2]=s_B64Dec[(U1)buf[2]], bin[3]=s_B64Dec[(U1)buf[3]];
+      if(bin[3]==64 || bin[2]==64)
+      { if(bin[2] != 64)
+        { ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+          ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+        }
+        else ret[j]=(bin[0]<<2) | ((bin[1]>>4)&3);
+        break;
+      }
+      ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+      ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+      ret[j+2]=((bin[2]&3)<<6) | bin[3];
+    }
+    
+    out.Clear();
+    out.v.vt=VT_ARRAY|VT_UI1, out.v.parray=sa;
+  }
+  else if(!b8bit && vIn.vt != VT_BSTR) return E_INVALIDARG;
+  else
+  { U1 *buf;
+    if(vIn.vt==VT_BSTR) buf=(U1*)vIn.bstrVal, len=SysStringByteLen(vIn.bstrVal);
+    else buf=(U1*)vIn.parray->pvData, len=vIn.parray->rgsabound[0].cElements;
+    if(len==0)
+    { out.v.vt=VT_NULL;
+      return S_OK;
+    }
+    if(buf[len-1]==61)
+    { left++;
+      if(buf[len-2]==61) left++;
+    }
+
+    SAFEARRAYBOUND bound = { len*4/3, 0 };
+    SAFEARRAY     *sa    = SafeArrayCreate(VT_UI1, 1, &bound);
+    U1            *ret   = (U1*)sa->pvData;
+
+    for(i=j=0; i<len; buf+=4,j+=3,i+=4)
+    { *(U4*)bin = *(U4*)buf;
+      bin[0]=s_B64Dec[bin[0]], bin[1]=s_B64Dec[bin[1]];
+      bin[2]=s_B64Dec[bin[2]], bin[3]=s_B64Dec[bin[3]];
+      if(bin[3]==64 || bin[2]==64)
+      { if(bin[2] != 64)
+        { ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+          ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+        }
+        else ret[j]=(bin[0]<<2) | ((bin[1]>>4)&3);
+        break;
+      }
+      ret[j  ]=(bin[0]<<2) | ((bin[1]>>4)&3);
+      ret[j+1]=((bin[1]&0xF)<<4) | ((bin[2]>>2)&0xF);
+      ret[j+2]=((bin[2]&3)<<6) | bin[3];
+    }
+    
+    out.Clear();
+    out.v.vt=VT_ARRAY|VT_UI1, out.v.parray=sa;
+  }
+  return S_OK;
 } /* g_DecodeB64 */
 
 HRESULT g_HashSHA1(VARIANT &vIn, AVAR &out)
@@ -299,6 +374,7 @@ HRESULT g_HashSHA1(VARIANT &vIn, AVAR &out)
   if(vIn.vt == VT_BSTR) buf=vIn.bstrVal, len=SysStringByteLen(vIn.bstrVal);
   else if((vIn.vt&VT_ARRAY)!=0 && vIn.parray->cbElements==1)
     buf=vIn.parray->pvData, len=vIn.parray->rgsabound[0].cElements;
+  else if(vIn.vt==VT_NULL) len=0;
   else return E_INVALIDARG;
   
   SHA1Digest     hash;
@@ -315,7 +391,9 @@ HRESULT g_HashSHA1(VARIANT &vIn, AVAR &out)
 } /* g_HashSHA1 */
 
 HRESULT g_CheckSHA1(VARIANT &vIn, VARIANT &vHash, bool &ok)
-{ if((vHash.vt&VT_ARRAY)==0 || vHash.parray->cbElements!=1) return E_INVALIDARG;
+{ if((vHash.vt&VT_ARRAY)==0 || vHash.parray->cbElements!=1 ||
+     vHash.parray->rgsabound[0].cElements!=20)
+    return E_INVALIDARG;
 
   AVAR    hash;
   HRESULT hRet;
@@ -395,98 +473,3 @@ void SHA1Digest::Pad()
   m_Buf[60]=(U1)(m_Length>>24), m_Buf[61]=(U1)(m_Length>>16);
   m_Buf[62]=(U1)(m_Length>>8),  m_Buf[63]=(U1)m_Length;
 } /* Pad */
-
-/*
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-  Persistable = 0  'NotPersistable
-  DataBindingBehavior = 0  'vbNone
-  DataSourceBehavior  = 0  'vbNone
-  MTSTransactionMode  = 0  'NotAnMTSObject
-END
-Attribute VB_Name = "Encoding"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
-
-Public Sub Str2ByteArray(StringIn As String, ByteArray() As Byte)
-    ByteArray = StrConv(StringIn, vbFromUnicode)
-End Sub
-Public Sub Span(CharsPerLine As Long, InArray() As Byte, OutArray() As Byte)
-Dim Lines As Long
-Dim i2 As Long
-Dim i As Long
-Dim TempI As Long
-Lines = ((UBound(InArray) + 1) + (UBound(InArray) + 1) Mod CharsPerLine) / CharsPerLine
-ReDim OutArray(LBound(InArray) To UBound(InArray) + (Lines * 2))
-TempI = 0
-While Not TempI > UBound(InArray)
-    For i = TempI To TempI + CharsPerLine - 1
-        If i2 > UBound(OutArray) Or i > UBound(InArray) Then Exit Sub
-        OutArray(i2) = InArray(i)
-        i2 = i2 + 1
-    Next
-    If i2 > UBound(OutArray) Then Exit Sub
-    OutArray(i2) = 13
-    OutArray(i2 + 1) = 10
-    TempI = TempI + CharsPerLine
-    i2 = i2 + 2
-Wend
-End Sub
-Public Sub DecodeB64(ByRef FileIn() As Byte, ByRef Out() As Byte)
-'declarations
-Dim inp(3) As Byte
-Dim iTemp As Long
-Dim i As Long
-Dim Lenght As Long
-Dim Remaining As Byte
-Dim BytesOut As Long
-Dim lTemp2 As Long
-If FileIn(UBound(FileIn)) = 61 Then
-    Remaining = 1
-    If FileIn(UBound(FileIn) - 1) = 61 Then
-        Remaining = 2
-    End If
-End If
-Lenght = UBound(FileIn) + 1 'lenght of the string
-BytesOut = ((Lenght / 4) * 3) - Remaining ' how many bytes will the decoded string have
-ReDim Out(BytesOut - 1)
-For i = 0 To Lenght Step 4
-    inp(0) = DecodeTable(FileIn(i))
-    inp(1) = DecodeTable(FileIn(i + 1))
-    inp(2) = DecodeTable(FileIn(i + 2))
-    inp(3) = DecodeTable(FileIn(i + 3))
-    If inp(3) = 64 Or inp(2) = 64 Then
-        If inp(3) = 64 And Not (inp(2) = 64) Then
-            inp(0) = DecodeTable(FileIn(i))
-            inp(1) = DecodeTable(FileIn(i + 1))
-            inp(2) = DecodeTable(FileIn(i + 2))
-            '2 bytes out
-            Out(iTemp) = (inp(0) * 4) Or ((inp(1) \ 16) And &H3)
-            Out(iTemp + 1) = ((inp(1) And &HF) * 16) Or ((inp(2) \ 4) And &HF)
-            Exit Sub
-        ElseIf inp(2) = 64 Then
-            inp(0) = DecodeTable(FileIn(i))
-            inp(1) = DecodeTable(FileIn(i + 1))
-            '1 byte out
-            Out(iTemp) = (inp(0) * 4) Or ((inp(1) \ 16) And &H3)
-            Exit Sub
-        End If
-    End If
-    '3 bytes out
-    Out(iTemp) = (inp(0) * 4) Or ((inp(1) \ 16) And &H3)
-    Out(iTemp + 1) = ((inp(1) And &HF) * 16) Or ((inp(2) \ 4) And &HF)
-    Out(iTemp + 2) = ((inp(2) And &H3) * 64) Or inp(3)
-    iTemp = iTemp + 3
-Next
-End Sub
-
-Public Sub Unspan(ArrayIn() As Byte, ArrayOut() As Byte)
-    Dim sTemp As String
-    sTemp = StrConv(ArrayIn, vbUnicode)
-    sTemp = Replace(sTemp, vbCrLf, "")
-    ArrayOut = StrConv(sTemp, vbFromUnicode)
-End Sub
-*/

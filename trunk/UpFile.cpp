@@ -18,24 +18,38 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef AU_COMMON_UTILS_H
-#define AU_COMMON_UTILS_H
+// UpFile.cpp : Implementation of CUpFile
 
-HRESULT g_GetField(ADORecordset *, UA4 nField, VARIANT *out);
-HRESULT g_GetField(ADORecordset *, VARIANT vField, VARIANT *out);
+#include "stdafx.h"
+#include "UpFile.h"
 
-HRESULT g_Config(BSTR sKey, BSTR sType, BSTR sSection, AVAR &out);
-void    g_InitConfig(HINSTANCE hInst);
-HRESULT g_LoadConfig();
-void    g_UnloadConfig();
 
-HRESULT g_StringToBin(BSTR sStr, bool b8bit /*=true*/, AVAR &out);
-HRESULT g_BinToString(VARIANT &vBin, bool b8bit /*=true*/, ASTR &out);
-HRESULT g_HexToBin(BSTR sHex, AVAR &out);
-HRESULT g_BinToHex(VARIANT &vBin, bool b8bit /*=true*/, ASTR &out);
-HRESULT g_EncodeB64(VARIANT &vIn, bool b8bit /*=true*/, ASTR &out);
-HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit /*=true*/, AVAR &out);
-HRESULT g_HashSHA1(VARIANT &vIn, AVAR &out);
-HRESULT g_CheckSHA1(VARIANT &vIn, VARIANT &vHash, bool &ok);
+// CUpFile
 
-#endif
+STDMETHODIMP CUpFile::get_FormName(BSTR *psName)
+{
+} /* get_FormName */
+
+STDMETHODIMP CUpFile::get_Filename(BSTR *psName)
+{
+} /* get_Filename */
+
+STDMETHODIMP CUpFile::get_Length(long *pnLen)
+{
+} /* get_Length */
+
+STDMETHODIMP CUpFile::get_MimeType(BSTR *psType)
+{
+} /* get_MimeType */
+
+STDMETHODIMP CUpFile::get_Attribute(BSTR sAttr, BSTR *psVal)
+{
+} /* get_Attribute */
+
+STDMETHODIMP CUpFile::get_Data(VARIANT *pvData)
+{
+} /* get_Data */
+
+STDMETHODIMP CUpFile::Save(BSTR sPath, VARIANT_BOOL bCanClobber)
+{
+} /* Save */

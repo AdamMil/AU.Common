@@ -24,7 +24,7 @@
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;_USRDLL"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				TreatWChar_tAsBuiltInType="TRUE"
 				ForceConformanceInForLoopScope="TRUE"
 				UsePrecompiledHeader="3"
@@ -243,6 +243,12 @@
 				RelativePath="Helpers.cpp">
 			</File>
 			<File
+				RelativePath="UpFile.cpp">
+			</File>
+			<File
+				RelativePath="Upload.cpp">
+			</File>
+			<File
 				RelativePath="Utility.cpp">
 			</File>
 			<File
@@ -301,6 +307,12 @@
 				RelativePath="Resource.h">
 			</File>
 			<File
+				RelativePath="UpFile.h">
+			</File>
+			<File
+				RelativePath="Upload.h">
+			</File>
+			<File
 				RelativePath="Utility.h">
 			</File>
 			<File
@@ -330,6 +342,12 @@
 			</File>
 			<File
 				RelativePath="LICENSE.txt">
+			</File>
+			<File
+				RelativePath="UpFile.rgs">
+			</File>
+			<File
+				RelativePath="Upload.rgs">
 			</File>
 			<File
 				RelativePath="Utility.rgs">

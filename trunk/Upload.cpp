@@ -18,24 +18,30 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef AU_COMMON_UTILS_H
-#define AU_COMMON_UTILS_H
+// Upload.cpp : Implementation of CUpload
 
-HRESULT g_GetField(ADORecordset *, UA4 nField, VARIANT *out);
-HRESULT g_GetField(ADORecordset *, VARIANT vField, VARIANT *out);
+#include "stdafx.h"
+#include "Upload.h"
 
-HRESULT g_Config(BSTR sKey, BSTR sType, BSTR sSection, AVAR &out);
-void    g_InitConfig(HINSTANCE hInst);
-HRESULT g_LoadConfig();
-void    g_UnloadConfig();
 
-HRESULT g_StringToBin(BSTR sStr, bool b8bit /*=true*/, AVAR &out);
-HRESULT g_BinToString(VARIANT &vBin, bool b8bit /*=true*/, ASTR &out);
-HRESULT g_HexToBin(BSTR sHex, AVAR &out);
-HRESULT g_BinToHex(VARIANT &vBin, bool b8bit /*=true*/, ASTR &out);
-HRESULT g_EncodeB64(VARIANT &vIn, bool b8bit /*=true*/, ASTR &out);
-HRESULT g_DecodeB64(VARIANT &vIn, bool b8bit /*=true*/, AVAR &out);
-HRESULT g_HashSHA1(VARIANT &vIn, AVAR &out);
-HRESULT g_CheckSHA1(VARIANT &vIn, VARIANT &vHash, bool &ok);
+// CUpload
 
-#endif
+STDMETHODIMP CUpload::get_Form(BSTR sItem, VARIANT *pvOut)
+{
+} /* get_Form */
+
+STDMETHODIMP CUpload::get_File(BSTR sItem, IUpFile **ppFile)
+{
+} /* get_File */
+
+STDMETHODIMP CUpload::get_NumFiles(long *pnFiles)
+{
+} /* get_NumFiles */
+
+STDMETHODIMP CUpload::GetFile(long nIndex, IUpFile **ppFile)
+{
+} /* GetFile */
+
+STDMETHODIMP CUpload::OnStartPage(IDispatch *pDisp)
+{
+} /* OnStartPage */

@@ -1,0 +1,26 @@
+HKCR
+{
+	AUCommon.Upload.1 = s 'Upload Class'
+	{
+		CLSID = s '{BC8072FD-3D1A-4576-B88B-A6A694740589}'
+	}
+	AUCommon.Upload = s 'Upload Class'
+	{
+		CLSID = s '{BC8072FD-3D1A-4576-B88B-A6A694740589}'
+		CurVer = s 'AUCommon.Upload.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {BC8072FD-3D1A-4576-B88B-A6A694740589} = s 'Upload Class'
+		{
+			ProgID = s 'AUCommon.Upload.1'
+			VersionIndependentProgID = s 'AUCommon.Upload'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
+		}
+	}
+}
