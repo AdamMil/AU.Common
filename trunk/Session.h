@@ -29,6 +29,7 @@
 class CSessionMan;
 
 // NOT SAFE TO USE SECTION NAME WITH '%'
+// TEXT DATA CURRENTLY LIMITED TO 8k
 
 // CAUSession
 class ATL_NO_VTABLE CAUSession : 
@@ -55,7 +56,7 @@ public:
 
 	CComPtr<IUnknown> m_pUnkMarshaler;
 public:
-  enum Flags { SF_PERSIST=1, SF_WRITETHROUGH=2 };
+  enum Flags { SF_PERSIST=1 };
 
   STDMETHODIMP get_Item(/*[in]*/ BSTR sKey, /*[out,retval]*/ VARIANT *pvOut);
   STDMETHODIMP put_Item(/*[in]*/ BSTR sKey, /*[in]*/ VARIANT vData);
@@ -98,13 +99,16 @@ protected:
 
   HRESULT  InitSession(bool useDB=false);
   Item *   FindItem(const ASTR &key, bool autoInsert=true);
-  HRESULT  BecomeDB();
+  HRESULT  BecomeDB(bool persist=false);
   void     DeleteSection(SectMap::iterator);
   void     DeleteSection2(SectMap::iterator);
   HRESULT  DeleteFromDB();
+  HRESULT  AddDBItem(const ASTR &skey, const ASTR &mkey, Item *);
+  HRESULT  AddDBItem(const ASTR &key, Item *);
   HRESULT  ReadDBItem(Item *, VARIANT *);
   HRESULT  WriteDBItem(Item *);
   HRESULT  GetDBItem(ASTR &key, Item **);
+  HRESULT  ReadValue(ADORecordset *rs, VARIANT *pvout);
   SectMap::iterator FindSection(const ASTR &key, bool autoInsert=true);
   SectMap::iterator SplitKey(ASTR &key);
     
@@ -117,6 +121,7 @@ protected:
   AComPtr<IDB>         m_DB;
   U4      m_Flags, m_Timeout;
   long    m_DBID;
+  bool    m_bNoInsert;
 
   static ACritSec          s_AllocCS;
   static CBlockAlloc<Item> s_ItemAlloc;

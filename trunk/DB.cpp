@@ -702,6 +702,7 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
     { p2=wcschr(++pc, L'/');
       if(p2 != pc)   type=_wtol(pc);
       if(p2 != NULL) size=_wtol(p2+1);
+      name = name.Substr(0, (UA4)(pc-name-1));
     }
     else if(fc==L'-') return E_INVALIDARG;
     CHKRET(m_Cmd->CreateParameter(name, (DataTypeEnum)type,
@@ -714,7 +715,7 @@ HRESULT CDB::FillParamsO(BSTR sParms, SAFEARRAY **aVals)
 } /* FillParamsO */
 
 const DataTypeEnum CDB::m_dbTypes[VT_UINT] =
-{ adEmpty,   adVarChar,   adSmallInt, adInteger, adSingle,  adDouble,   adCurrency, adDate,
+{ adEmpty,   adInteger,   adSmallInt, adInteger, adSingle,  adDouble,   adCurrency, adDate,
   adVarChar, adIDispatch, adError,    adBoolean, adVariant, adIUnknown, adDecimal,  adTinyInt,
   adUnsignedTinyInt, adUnsignedSmallInt, adUnsignedInt, adBigInt, adUnsignedBigInt, adInteger,
   adUnsignedInt

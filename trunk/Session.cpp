@@ -26,19 +26,20 @@
 
 // CAUSession
 CAUSession::CAUSession()
-{ m_Flags   = 0;
-  m_Timeout = DEFTIMEOUT;
-  m_DBID    = 0;
+{ m_Flags     = 0;
+  m_Timeout   = DEFTIMEOUT;
+  m_DBID      = 0;
+  m_bNoInsert = false;
 } /* CAUSession */
 
 CAUSession::~CAUSession()
-{ ClearAll();
-  SectMap::iterator si = m_Sects.begin();
-  for(; si != m_Sects.end(); si++) delete (*si).second;
+{ SectMap::iterator si=m_Sects.begin();
+  while(si != m_Sects.end()) DeleteSection(si++);
 } /* ~CAUSession */
 
 void CAUSession::FinalRelease()
-{ Save();
+{ if(m_Flags & SF_PERSIST) Save();
+  else Delete();
   m_pUnkMarshaler.Release();
 } /* FinalRelease */
 
@@ -59,18 +60,16 @@ STDMETHODIMP CAUSession::get_Item(BSTR sKey, VARIANT *pvOut)
 } /* get_Item */
 
 STDMETHODIMP CAUSession::put_Item(BSTR sKey, VARIANT vData)
-{ AComLock lock(this);
-  HRESULT  hRet;
+{ if(m_bNoInsert) return E_ACCESSDENIED;
+  AComLock lock(this);
+  HRESULT  hRet=S_OK;
   if(m_DBID) CHKRET(g_DBCheckType(&vData));
   if(m_SessionID.IsEmpty()) CHKRET(InitSession());
-  Item *it = FindItem(ASTR(sKey).LowerCase());
+  ASTR  key(sKey);
+  Item *it = FindItem(key.LowerCase());
   VariantClear(&it->Var);
   VariantCopy(&it->Var, &vData);
-  if(m_DBID && (m_Flags&SF_WRITETHROUGH))
-  { hRet = WriteDBItem(it);
-    it->bDirty = false;
-  }
-  else it->bDirty = true;
+  it->bDirty = true;
   return hRet;
 } /* put_Item */
 
@@ -214,7 +213,7 @@ STDMETHODIMP CAUSession::Clear(BSTR sSect)
   SectMap::iterator it = FindSection(ASTR(sSect).LowerCase(), false);
   if(it==m_Sects.end()) return E_INVALIDARG;
 
-  bool bResetKey, bResetSect;
+  bool bResetKey=false, bResetSect=false;
   if(!(m_EnumSect!=it)) bResetSect=true;
   if((*it).second==m_EnumKeyMap) bResetKey=true;
 
@@ -231,19 +230,20 @@ STDMETHODIMP CAUSession::Clear(BSTR sSect)
 
 STDMETHODIMP CAUSession::ClearAll()
 { AComLock lock(this);
-  HRESULT  hRet;
-  if(m_SessionID.IsEmpty()) CHKRET(InitSession());
-  SectMap::iterator it, next = m_Sects.begin();
+  if(m_SessionID.IsEmpty()) return S_FALSE;
 
   if(m_DBID)
   { SAFEARRAY sa, *psa=&sa;
     VARIANT   var;
+    HRESULT   hRet;
     g_InitSA(&sa, &var);
     var.vt = VT_I4, var.intVal = m_DBID;
     CHKRET(m_DB->ExecuteONR(ASTR(L"sess_Clear"), L"@session_id", &psa));
-    while(next != m_Sects.end()) DeleteSection(next++);
   }
-  else while(next != m_Sects.end()) DeleteSection(next++);
+
+  SectMap::iterator it=m_Sects.begin();
+  while(it != m_Sects.end()) DeleteSection(it++);
+
   m_CurSect    = m_EnumSect = FindSection(ASTR());
   m_EnumKeyMap = (*m_CurSect).second;
   m_EnumKey    = m_EnumKeyMap->begin();
@@ -255,8 +255,9 @@ STDMETHODIMP CAUSession::Persist(BSTR *psID)
   HRESULT  hRet;
   if(m_SessionID.IsEmpty()) CHKRET(InitSession());
   if(m_Flags&SF_PERSIST) return S_FALSE;
-  CHKRET(BecomeDB());
+  CHKRET(BecomeDB(true));
   m_Flags |= SF_PERSIST;
+  if(psID) *psID = m_SessionID.ToBSTR();
   return hRet;
 } /* Persist */
 
@@ -308,7 +309,16 @@ STDMETHODIMP CAUSession::Save()
     k  = km->begin();
     for(; k != km->end(); k++)
     { it = (*k).second;
-      if(it->bDirty && FAILED(WriteDBItem(it))) hRet=E_FAIL;
+      if(it->bDirty)
+      { if(it->ID==0)
+        { if(SUCCEEDED(AddDBItem((*s).first, (*k).first, it))) it->bDirty=false;
+          else hRet=E_FAIL;
+        }
+        else
+        { if(SUCCEEDED(WriteDBItem(it))) it->bDirty=false;
+          else hRet=E_FAIL;
+        }
+      }
     }
   }
   return hRet;
@@ -317,14 +327,13 @@ STDMETHODIMP CAUSession::Save()
 STDMETHODIMP CAUSession::Delete()
 { AComLock lock(this);
   HRESULT  hRet;
-  // don't need to initialize
+  // don't need to initialize session
   if(m_DBID)
   { CHKRET(DeleteFromDB());
-    ClearAll();
     m_DBID = 0;
-    hRet   = S_OK;
   }
-  else hRet = S_FALSE;
+  else hRet = S_OK;
+  ClearAll();
   m_SessionID.Clear();
   m_Flags   = 0;
   m_Timeout = DEFTIMEOUT;
@@ -337,8 +346,10 @@ STDMETHODIMP CAUSession::LoadKeysFromDB()
   if(m_SessionID.IsEmpty()) CHKRET(InitSession());
   if(!m_DBID) return E_UNEXPECTED;
 
+  SectMap::iterator si;
   ARecordset   rs;
-  BSTR         key;
+  ASTR         key;
+  Item        *it;
   SAFEARRAY    sa, *psa=&sa;
   VARIANT      var;
   VARIANT_BOOL eof=1;
@@ -348,17 +359,20 @@ STDMETHODIMP CAUSession::LoadKeysFromDB()
   var.vt = VT_I4, var.intVal = m_DBID;
   CHKRET(m_DB->ExecuteO(ASTR(L"sess_LoadSession"), L"@session_id", &psa, &rs));
 
-  REWRITE ME
   while(rs->get_EOF(&eof), !eof)
-  { VariantClear(&var);
-    CHKRT2(g_GetField(rs, 0, &var), Done);
-    key =var.bstrVal, var.vt=VT_EMPTY;
-    hRet=get_Item(key, &var);
-    SysFreeString(key);
-    if(FAILED(hRet)) goto Done;
-    rs->MoveNext();
+  { IFS(ReadValue(rs, &var))
+    { s_AllocCS.Lock();
+      it = s_ItemAlloc.New();
+      s_AllocCS.Unlock();
+      it->Var    = var;
+      g_GetField(rs, 2, &var);
+      it->ID     = var.intVal;
+      it->bDirty = false;
+      g_GetField(rs, 3, &var);
+      si = SplitKey(key.Attach(var.bstrVal));
+      (*si).second->insert(KeyMapPair(key, it));
+    }
   }
-  Done:
   return hRet;
 } /* LoadKeysFromDB */
 
@@ -402,42 +416,56 @@ CAUSession::Item * CAUSession::FindItem(const ASTR &key, bool autoInsert)
   return (*ki).second;
 } /* FindItem */
 
-HRESULT CAUSession::BecomeDB()
+HRESULT CAUSession::BecomeDB(bool persist)
 { HRESULT hRet;
   if(!m_DB) CHKRET(g_CreateDB(&m_DB, false, L"DB/Session"));
 
   SAFEARRAY  sa, *psa=&sa;
-  ASTR       sql(L"sess_CreateSession");
-  VARIANT    var[2];
+  ASTR       str;
+  VARIANT    var[4];
   UA1        tries=50;
 
-  g_InitSA(&sa, var, 2);
+  g_InitSA(&sa, var, 3);
   var[0].vt=VT_BSTR, var[0].bstrVal = SysAllocStringLen(NULL, 20);
   var[1].vt=VT_I4,   var[1].intVal  = m_Timeout;
-  
+  var[2].vt=VT_BOOL, var[2].boolVal = persist ? VBTRUE : VBFALSE;
+
   do
   { g_RandStr(var[0].bstrVal, 20); // TODO: replace random number generator [otherwise this may fail]
-    hRet = m_DB->ExecuteONR(sql, L"@session_key,-session_id=3", &psa);
-  } while(FAILED(hRet) && --tries);
+    IFF(m_DB->ExecuteONR(str=L"sess_CreateSession", L"@session_key,@timeout_val,@persists,-session_id=3", &psa))
+    { SysFreeString(var[0].bstrVal);
+      return hRet;
+    }
+    m_DB->Output(str=L"session_id", var+3);
+  } while(var[3].intVal==0 && --tries);
   if(!tries) return E_FAIL;
-  
+  m_DBID = var[3].intVal;
   m_SessionID.Attach(var[0].bstrVal);
-  IFS(m_DB->Output(sql=L"session_id", var)) m_DBID=var->intVal;
-  else m_SessionID.Clear();
+
+  SectMap::iterator s = m_Sects.begin();
+  KeyMap::iterator  k;
+  KeyMap           *km;
+  for(; s != m_Sects.end(); s++)
+  { km = (*s).second;
+    k  = km->begin();
+    for(; k != km->end(); k++) (*k).second->bDirty=true;
+  }
   return hRet;
 } /* BecomeDB */
 
 void CAUSession::DeleteSection(CAUSession::SectMap::iterator i)
 { KeyMap *km = (*i).second;
-  KeyMap::iterator ki = km->begin();
-  Item   *it;
-  for(; ki != km->end(); ki++)
-  { it = (*ki).second;
-    VariantClear(&it->Var);
-  }
+  KeyMap::iterator ki;
+
+  m_bNoInsert=true;
+  for(ki=km->begin(); ki!=km->end(); ki++) VariantClear(&(*ki).second->Var);
+  m_bNoInsert=false;
+
   s_AllocCS.Lock();
   for(ki=km->begin(); ki!=km->end(); ki++) s_ItemAlloc.Delete((*ki).second);
   s_AllocCS.Unlock();
+
+  m_Sects.erase(i);
 } /* DeleteSection */
 
 void CAUSession::DeleteSection2(CAUSession::SectMap::iterator i)
@@ -461,68 +489,87 @@ HRESULT CAUSession::DeleteFromDB()
   return m_DB->ExecuteONR(ASTR(L"sess_DeleteSession"), L"@session_id", &psa);
 } /* DeleteFromDB */
 
+HRESULT CAUSession::AddDBItem(const ASTR &skey, const ASTR &mkey, CAUSession::Item *it)
+{ return AddDBItem((ASTR(skey)+=L'.').Append(mkey), it);
+} /* AddDBItem(const ASTR &, const ASTR &, Item *) */
+
+HRESULT CAUSession::AddDBItem(const ASTR &key, CAUSession::Item *it)
+{ assert(m_DBID && m_DB && it && it->ID==0);
+  HRESULT   hRet;
+  ASTR      str(L"sess_AddItem");
+  VARIANT   var[4];
+  SAFEARRAY sa, dsa, *psa=&sa;
+
+  g_InitSA(&sa, var, 4);
+  var[0].vt=VT_I4,   var[0].intVal =m_DBID;
+  var[1].vt=VT_BSTR, var[1].bstrVal=(BSTR)key.InnerStr();
+  if(it->Var.vt==VT_BSTR) var[2].vt=VT_NULL, var[3].vt=VT_BSTR, var[3].bstrVal=it->Var.bstrVal;
+  else
+  { g_InitSA(&dsa, &it->Var, 16);
+    dsa.cbElements = 1;
+    var[2].vt=VT_UI1|VT_ARRAY, var[2].parray=&dsa, var[3].vt=VT_NULL;
+  }
+
+  CHKRET(m_DB->ExecuteONR(str, L"@session_id,@item_name,@bindata,@textdata,-item_id=3", &psa));
+  CHKRET(m_DB->Output(str=L"item_id", var));
+  it->ID = var->intVal;
+  return hRet;
+} /* AddDBItem(const ASTR &, Item *) */
+
+// TODO: optimize this to use output parameters, somehow
 HRESULT CAUSession::ReadDBItem(CAUSession::Item *it, VARIANT *pvout)
 { assert(it && pvout && m_DBID && m_DB);
   ASTR       str(L"sess_GetValue");
+  ARecordset rs;
   HRESULT    hRet;
-  SAFEARRAY  sa, *psa;
+  SAFEARRAY  sa, *psa=&sa;
   VARIANT    var[2];
+  VARIANT_BOOL eof;
 
   g_InitSA(&sa, var, 2);
   var[0].vt=var[1].vt=VT_I4, var[0].intVal=m_DBID, var[1].intVal=it->ID;
-  CHKRET(m_DB->ExecuteONR(str, L"@session_id,+item_id,-binval=128/16,-textval=201", &psa));
-  CHKRET(m_DB->Output(str=L"item_id", var));
-  if(var->intVal==0) return E_ABORT;
-  CHKRET(m_DB->Output(str=L"textval", pvout));
-  if(pvout->vt==VT_NULL)
-  { CHKRET(m_DB->Output(str=L"binval", var));
-    if(var->vt&VT_ARRAY) memcpy(pvout, var->parray->pvData, sizeof(VARIANT));
-    else hRet=E_ABORT;
-    VariantClear(var);
-  }
-  return hRet;
+  CHKRET(m_DB->ExecuteO(str, L"@session_id,@item_id", &psa, &rs));
+  CHKRET(rs->get_EOF(&eof));
+  if(eof) return E_ABORT;
+  return ReadValue(rs, pvout);
 } /* ReadDBItem */
 
 HRESULT CAUSession::WriteDBItem(CAUSession::Item *it)
 { assert(it && it->ID && m_DBID && m_DB);
   HRESULT   hRet;
-  SAFEARRAY sa, *psa, dsa;
-  VARIANT   var[4];
+  ASTR      str;
+  SAFEARRAY sa, *psa=&sa, dsa;
+  VARIANT   var[3];
   
   g_InitSA(&sa, var, 3);
   var[0].vt=var[1].vt=VT_I4, var[0].intVal=m_DBID, var[1].intVal=it->ID;
-  
   if(it->Var.vt==VT_BSTR) var[2].vt=VT_NULL, var[3].vt=VT_BSTR, var[3].bstrVal=it->Var.bstrVal;
   else
   { g_InitSA(&dsa, &it->Var, 16);
     dsa.cbElements = 1;
-    var[2].vt=VT_UI1|VT_ARRAY, var[3].vt=VT_NULL;
+    var[2].vt=VT_UI1|VT_ARRAY, var[2].parray=&dsa, var[3].vt=VT_NULL;
   }
-  IFS(m_DB->ExecuteONR(ASTR(L"sess_PutValue"), L"@session_id,@item_id,@binval,@textval", &psa)) it->bDirty = false;
+  IFS(m_DB->ExecuteONR(str=L"sess_PutValue", L"@session_id,+item_id=3,@binval,@textval", &psa)) it->bDirty = false;
   return hRet;
 } /* WriteDBItem */
 
+// TODO: optimize this to use output parameters, somehow
 HRESULT CAUSession::GetDBItem(ASTR &key, CAUSession::Item **ppit)
 { assert(ppit && m_DBID && m_DB);
   ASTR       str(L"sess_GetValue");
+  ARecordset rs;
   HRESULT    hRet;
-  SAFEARRAY  sa, *psa;
+  SAFEARRAY  sa, *psa=&sa;
   VARIANT    var[3];
+  VARIANT_BOOL eof;
 
   g_InitSA(&sa, var, 2);
   var[0].vt=VT_I4, var[0].intVal=m_DBID, var[1].vt=VT_BSTR, var[1].bstrVal=(BSTR)key.InnerStr();
-  CHKRET(m_DB->ExecuteONR(str, L"@session_id,@item_name,-item_id=3,-binval=128/16,-textval=201", &psa));
-  CHKRET(m_DB->Output(str=L"item_id", var));
-  if(var->intVal==0) return S_FALSE;
+  CHKRET(m_DB->ExecuteO(str, L"@session_id,@item_name", &psa, &rs));
+  CHKRET(rs->get_EOF(&eof));
+  if(eof) return S_FALSE;
 
-  CHKRET(m_DB->Output(str=L"textval", var+2));
-  if(var[2].vt==VT_NULL)
-  { CHKRET(m_DB->Output(str=L"binval", var+1));
-    if(var[1].vt&VT_ARRAY) memcpy(var+2, var[1].parray->pvData, sizeof(VARIANT));
-    else hRet=E_ABORT;
-    VariantClear(var+1);
-  }
-  if(SUCCEEDED(hRet))
+  IFS(ReadValue(rs, var+2))
   { s_AllocCS.Lock();
     Item *it = s_ItemAlloc.New();
     s_AllocCS.Unlock();
@@ -533,6 +580,21 @@ HRESULT CAUSession::GetDBItem(ASTR &key, CAUSession::Item **ppit)
   }
   return hRet;
 } /* GetDBItem */
+
+HRESULT CAUSession::ReadValue(ADORecordset *rs, VARIANT *pvout)
+{ assert(rs && pvout);
+  HRESULT hRet;
+  VARIANT var;
+
+  CHKRET(g_GetField(rs, 1, pvout));
+  if(pvout->vt==VT_NULL)
+  { CHKRET(g_GetField(rs, 0, &var));
+    if(var.vt&VT_ARRAY) memcpy(pvout, var.parray->pvData, sizeof(VARIANT));
+    else hRet=E_ABORT;
+    VariantClear(&var);
+  }
+  return hRet;
+} /* ReadValue */
 
 CAUSession::SectMap::iterator CAUSession::FindSection(const ASTR &key, bool autoInsert)
 { SectMap::iterator i = m_Sects.find(key);

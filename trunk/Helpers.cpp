@@ -52,13 +52,15 @@ ASTR ASTRList::Join(const WCHAR *s) const
 
 /*** ASTR implementation ***/
 ASTR & ASTR::Attach(BSTR str)
-{ m_Ref->Release();
-  if(str)
+{ if(str)
   { New();
     m_Ref->m_Length = m_Ref->m_Max = (UA4)SysStringLen(str);
     m_Ref->m_Str    = str;
   }
-  else Init();
+  else
+  { m_Ref->Release();
+    Init();
+  }
   return *this;
 } /* Attach */
 
@@ -249,8 +251,9 @@ ASTR & ASTR::Set(WCHAR c)
 } /* Set(WCHAR c) */
 
 ASTR & ASTR::operator=(const ASTR &rhs)
-{ m_Ref->Release();
-  (m_Ref=rhs.m_Ref)->AddRef();
+{ rhs.m_Ref->AddRef();
+  m_Ref->Release();
+  m_Ref=rhs.m_Ref;
   return *this;
 } /* operator= */
 
@@ -271,7 +274,10 @@ void ASTR::New()
 
 /*** ASTR::ASTRRef implementation ***/
 ASTR::ASTRRef::ASTRRef(BSTR s, UA4 l, UA4 m)
-{ m_Str=s, m_Length=l, m_Max=m, m_Refs=1;
+{ m_Str=SysAllocStringLen(NULL, m_Max=(m?m:64));
+  if(l>0) memcpy(m_Str, s, (l+1)*sizeof(WCHAR));
+  SetLength(m_Length=l);
+  m_Refs=1;
 } /* ASTRRef(BSTR, UA4, UA4) */
 
 void ASTR::ASTRRef::Format(const WCHAR *ctl, SNP va_list list)
