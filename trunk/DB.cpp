@@ -25,36 +25,35 @@
 #include <mtx.h>
 
 CDB::CDB()
-{ m_ConnVal    = L"Default";
-  m_nTimeout   = 30;
+{ m_nTimeout   = 30;
   m_CursorType = adOpenForwardOnly;
   m_LockType   = adLockReadOnly;
   m_bInit      = false;
 }
 
-STDMETHODIMP CDB::get_ConnectionKey(BSTR *pVal)
+STDMETHODIMP CDB::get_ConnSection(BSTR *pVal)
+{ if(!pVal) return E_POINTER;
+  *pVal = m_ConnSect.IsEmpty() ? SysAllocString(L"Default") : m_ConnSect.ToBSTR();
+  return S_OK;
+} /* get_ConnSection */
+
+STDMETHODIMP CDB::put_ConnSection(BSTR newVal)
+{ if(m_bInit && m_ConnSect != newVal) Close();
+  m_ConnSect = newVal;
+  return S_OK;
+} /* put_ConnSection */
+
+STDMETHODIMP CDB::get_ConnKey(BSTR *pVal)
 { if(!pVal) return E_POINTER;
   *pVal = m_ConnKey.IsEmpty() ? SysAllocString(L"Default") : m_ConnKey.ToBSTR();
   return S_OK;
-} /* get_ConnectionKey */
+} /* get_ConnKey */
 
-STDMETHODIMP CDB::put_ConnectionKey(BSTR newVal)
+STDMETHODIMP CDB::put_ConnKey(BSTR newVal)
 { if(m_bInit && m_ConnKey != newVal) Close();
   m_ConnKey = newVal;
   return S_OK;
-} /* put_ConnectionKey */
-
-STDMETHODIMP CDB::get_ConnectionValue(BSTR *pVal)
-{ if(!pVal) return E_POINTER;
-  *pVal = m_ConnVal.IsEmpty() ? SysAllocString(L"Default") : m_ConnVal.ToBSTR();
-  return S_OK;
-} /* get_ConnectionValue */
-
-STDMETHODIMP CDB::put_ConnectionValue(BSTR newVal)
-{ if(m_bInit && m_ConnVal != newVal) Close();
-  m_ConnVal = newVal;
-  return S_OK;
-} /* put_ConnectionValue */
+} /* put_ConnKey */
 
 STDMETHODIMP CDB::get_CursorType(int *pVal)
 { if(!pVal) return E_POINTER;

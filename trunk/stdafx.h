@@ -59,8 +59,14 @@
 #include <atlbase.h>
 #include <atlcom.h>
 #include <comutil.h>
+#include <msxml2.h>
 #include <adoid.h>
 #include <adoint.h>
+namespace ASP
+{
+  #include <asptlb.h>
+}
+
 #include <stdio.h>
 #include <assert.h>
 #include <cstdarg>
@@ -68,11 +74,6 @@
 #include <cstdlib>
 #include <cwchar>
 #include <cstring>
-
-namespace ASP
-{
-  #include <asptlb.h>
-}
 
 #include "Helpers.h"
 #include "Utils.h"

@@ -94,6 +94,7 @@ END
 IDR_COMMON              REGISTRY                "Common.rgs"
 IDR_DB                  REGISTRY                "DB.rgs"
 IDR_CONFIG              REGISTRY                "Config.rgs"
+IDR_DBMAN               REGISTRY                "DBMan.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //

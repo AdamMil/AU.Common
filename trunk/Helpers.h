@@ -67,9 +67,13 @@ class ASTR
   operator WCHAR *()             { return m_Str; }
   operator const WCHAR *() const { return m_Str; }
 
+  ASTR &  Attach(BSTR str);
+  BSTR    Detach();
+
   UA4     Length() const { return m_Length; }
   ASTR &  Format(const WCHAR *ctl, ...);
   ASTR &  Format(const WCHAR *ctl, std::va_list);
+
   ASTR &  Replace(const WCHAR *find, const WCHAR *rep);
 
   void    Reserve(UA4);
@@ -77,8 +81,13 @@ class ASTR
   void    UpdateLength();
   BSTR    ToBSTR() const { return SysAllocString(m_Str); }
 
-  bool operator==(const WCHAR *rhs) const { return wcscmp(m_Str, rhs)==0; }
-  bool operator<(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)<0;  }
+  bool operator==(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)==0; }
+  bool operator!=(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)!=0; }
+  bool operator<(const WCHAR *rhs)   const { return wcscmp(m_Str, rhs)<0;  }
+  bool operator>(const WCHAR *rhs)   const { return wcscmp(m_Str, rhs)>0;  }
+  bool operator<=(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)<=0; }
+  bool operator>=(const WCHAR *rhs)  const { return wcscmp(m_Str, rhs)>=0; }
+
   bool operator!() const { return m_Str[0] == 0; }
   bool IsEmpty()   const { return m_Str[0] == 0; }
   
@@ -105,11 +114,25 @@ class ASTR
   void Append(const WCHAR *, UA4 len=(UA4)-1);
   void Set   (const WCHAR *, UA4 len=(UA4)-1);
   void Grow(UA4);
+
+  friend bool operator==(const WCHAR *a, const ASTR &b);
+  friend bool operator!=(const WCHAR *a, const ASTR &b);
+  friend bool operator<(const WCHAR *a, const ASTR &b);
+  friend bool operator>(const WCHAR *a, const ASTR &b);
+  friend bool operator<=(const WCHAR *a, const ASTR &b);
+  friend bool operator>=(const WCHAR *a, const ASTR &b);
+  friend ASTR operator+(WCHAR c, const ASTR &s);
+  friend ASTR operator+(const WCHAR *a, const ASTR &b);
 };
 
-inline bool operator<(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)<0; }
-inline ASTR operator+(WCHAR c, const ASTR &s)        { WCHAR buf[2] = {c, 0}; return ASTR(buf)+=s; }
-inline ASTR operator+(const WCHAR *a, const ASTR &b) { assert(a != NULL); return ASTR(a)+=b; }
+inline bool operator==(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)==0;  }
+inline bool operator!=(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)!=0;  }
+inline bool operator<(const WCHAR *a, const ASTR &b)  { assert(a != NULL); return wcscmp(a, b)<0;   }
+inline bool operator>(const WCHAR *a, const ASTR &b)  { assert(a != NULL); return wcscmp(a, b)>0;   }
+inline bool operator<=(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)<=0;  }
+inline bool operator>=(const WCHAR *a, const ASTR &b) { assert(a != NULL); return wcscmp(a, b)>=0;  }
+inline ASTR operator+(WCHAR c, const ASTR &s)         { WCHAR buf[2] = {c, 0}; return ASTR(buf)+=s; }
+inline ASTR operator+(const WCHAR *a, const ASTR &b)  { assert(a != NULL); return ASTR(a)+=b;       }
 
 template<typename T>
 class _NoAddRefReleaseOnAComPtr : public T
@@ -123,7 +146,7 @@ class AComPtr
 { public:
   AComPtr()      { p=NULL; }
   AComPtr(T *op) { if ((p=op) != NULL) p->AddRef(); }
-  AComPtr(const AComPtr<T> &op) { if ((p=op.p) != NULL) p->AddRef(); }
+  AComPtr(AComPtr<T> &op) { if ((p=op.p) != NULL) p->AddRef(); }
  ~AComPtr()      { if(p) p->Release(); }
 
   operator T*()   const { return (T*)p; }
@@ -136,8 +159,8 @@ class AComPtr
   bool operator <(T *rhs) const { return p<rhs;   }
   bool operator==(T *rhs) const { return p==rhs;  }
 
-  AComPtr<T>& operator=(T *lp)                { return Set(lp);   }
-  AComPtr<T>& operator=(const AComPtr<T> &lp) { return Set(lp.p); }
+  AComPtr<T>& operator=(T *lp)          { return Set(lp);   }
+  AComPtr<T>& operator=(AComPtr<T> &lp) { return Set(lp.p); }
 
   bool IsEqualObject(IUnknown *op)
   { if(p==NULL && pOther==NULL) return true;
@@ -189,6 +212,90 @@ class AComPtr
     p=op;
     return *this;
   }
+};
+
+class AVAR
+{ public:
+  AVAR()                  { VariantInit(&v); }
+  AVAR(const VARIANT &ov) { VariantInit(&v); VariantCopy(&v, const_cast<VARIANT*>(&ov));   }
+  AVAR(const AVAR &ov)    { VariantInit(&v); VariantCopy(&v, const_cast<VARIANT*>(&ov.v)); }
+ ~AVAR() { Clear(); }
+  
+  void    Clear() { VariantClear(&v); }
+  bool    IsEmpty() const { return v.vt==VT_EMPTY; }
+
+  void    Attach(const VARIANT &ov);
+  VARIANT Detach();
+  HRESULT Copy(AVAR &out) const;
+  HRESULT CopyTo(VARIANT *pv) const;
+  
+  HRESULT ChangeType(VARTYPE type);
+  HRESULT ChangeCopy(VARTYPE type, AVAR &out) const;
+  
+  int Cmp(const VARIANT &rhs) const;
+
+  VARIANT * operator&() { assert(v.vt==VT_EMPTY); return &v; }
+  const VARIANT * operator&() const { assert(v.vt==VT_EMPTY); return &v; }
+  operator VARIANT &()  { return v; }
+
+  AVAR & AVAR::operator=(const VARIANT &rhs);
+
+  bool operator==(const VARIANT &rhs) const { return Cmp(rhs)==0; }
+  bool operator!=(const VARIANT &rhs) const { return Cmp(rhs)!=0; }
+  bool operator< (const VARIANT &rhs) const { return Cmp(rhs)<0;  }
+  bool operator> (const VARIANT &rhs) const { return Cmp(rhs)>0;  }
+  bool operator<=(const VARIANT &rhs) const { return Cmp(rhs)<=0; }
+  bool operator>=(const VARIANT &rhs) const { return Cmp(rhs)>=0; }
+  
+  VARIANT v;
+};
+bool operator==(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)==0; }
+bool operator!=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)!=0; }
+bool operator<(const VARIANT &lhs,  const AVAR &rhs) { return rhs.Cmp(lhs)>=0; }
+bool operator>(const VARIANT &lhs,  const AVAR &rhs) { return rhs.Cmp(lhs)<=0; }
+bool operator<=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)>0;  }
+bool operator>=(const VARIANT &lhs, const AVAR &rhs) { return rhs.Cmp(lhs)<0;  }
+
+class AXMLNode : public AComPtr<IXMLDOMNode>
+{ protected:
+  typedef IXMLDOMNode Node;
+  typedef AComPtr<IXMLDOMNode> Base;
+
+  public:
+  AXMLNode() { }
+  AXMLNode(Node *op) : Base(op) { }
+  AXMLNode(Base &op) : Base(op) { }
+
+  AXMLNode FirstChild() const;
+  AXMLNode LastChild() const;
+  AXMLNode NextSibling() const;
+  AXMLNode PrevSibling() const;
+  AXMLNode SelectSingleNode(BSTR path) const;
+
+  IXMLDOMNodeList * ChildNodes() const;
+  IXMLDOMNodeList * SelectNodes(BSTR path) const;
+  
+  ASTR     NodeName() const;
+  ASTR     Attr(BSTR attr) const;
+  ASTR     Text() const;
+  AVAR     Value() const;
+};
+
+class AXMLNodeList : public AComPtr<IXMLDOMNodeList>
+{ protected:
+  typedef IXMLDOMNodeList List;
+  typedef AComPtr<IXMLDOMNodeList> Base;
+
+  public:
+  AXMLNodeList() { }
+  AXMLNodeList(List *op) : Base(op) { }
+  AXMLNodeList(Base &op) : Base(op) { }
+
+  UA4 Length();
+  AXMLNode Item(UA4 index);
+  
+  void Reset();
+  AXMLNode Next();
 };
 
 #endif

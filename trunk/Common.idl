@@ -49,6 +49,14 @@ library AU_CommonLib
   ]
   interface IConfig : IDispatch
   {
+    [propget,id(0)] HRESULT Item([in] BSTR sKey, [in,defaultvalue("")] BSTR sType, [in,defaultvalue("")] BSTR sSection, [out,retval] VARIANT *pvOut);
+    [propget,id(1)] HRESULT Exists([in] BSTR sKey, [in,defaultvalue("")] BSTR sSection, [out,retval] VARIANT_BOOL *pvBool);
+    [propget,id(2)] HRESULT Section([out,retval] BSTR *psSect);
+    [propput,id(2)] HRESULT Section([in] BSTR sSect);
+    
+    [id(10)] HRESULT OpenXML([in] BSTR sXML);
+    [id(11)] HRESULT OpenFile([in] BSTR sPath);
+    [id(12)] HRESULT Close();
   };
 
   /* IDB interface */
@@ -62,10 +70,10 @@ library AU_CommonLib
   ]
   interface IDB : IDispatch
   {
-		[propget, id(1)] HRESULT ConnectionKey([out, retval] BSTR *pVal);
-		[propput, id(1)] HRESULT ConnectionKey([in] BSTR newVal);
-		[propget, id(2)] HRESULT ConnectionValue([out, retval] BSTR *pVal);
-		[propput, id(2)] HRESULT ConnectionValue([in] BSTR newVal);
+		[propget, id(1)] HRESULT ConnSection([out, retval] BSTR *pVal);
+		[propput, id(1)] HRESULT ConnSection([in] BSTR newVal);
+		[propget, id(2)] HRESULT ConnKey([out, retval] BSTR *pVal);
+		[propput, id(2)] HRESULT ConnKey([in] BSTR newVal);
 		[propget, id(3)] HRESULT CursorType([out, retval] int *pVal);
 		[propput, id(3)] HRESULT CursorType([in] int newVal);
 		[propget, id(4)] HRESULT LockType([out, retval] int *pVal);
@@ -88,6 +96,19 @@ library AU_CommonLib
 		[vararg, id(34)] HRESULT ExecuteNMNR([in] BSTR sSQL, [in] BSTR sParms, [in] SAFEARRAY(VARIANT) *aVals);
   };
 
+  /* IDBMan interface */
+  [
+	  object,
+	  uuid(5E4184F5-F359-4C09-800B-17EC60DBBD91),
+	  dual,
+	  nonextensible,
+	  helpstring("IDBMan Interface"),
+	  pointer_default(unique)
+  ]
+  interface IDBMan : IDispatch
+  {
+  };
+
 
   /* Config class */
 	[
@@ -107,5 +128,15 @@ library AU_CommonLib
 	coclass DB
 	{
 		[default] interface IDB;
+	};
+
+  /* DBMan class */
+	[
+		uuid(E4FAE717-A310-460D-A30B-E38698E79A45),
+		helpstring("DBMan Class")
+	]
+	coclass DBMan
+	{
+		[default] interface IDBMan;
 	};
 };
