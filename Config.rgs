@@ -1,0 +1,27 @@
+HKCR
+{
+  AU.Common.Config.1 = s 'Config Class'
+  {
+  	CLSID = s '{18B5A39D-092D-4916-87A5-CF627A34455B}'
+  }
+  AU.Common.Config = s 'Config Class'
+  {
+  	CLSID = s '{18B5A39D-092D-4916-87A5-CF627A34455B}'
+  	CurVer = s 'AU.Common.Config.1'
+  }
+  NoRemove CLSID
+  {
+  	ForceRemove {18B5A39D-092D-4916-87A5-CF627A34455B} = s 'Config Class'
+  	{
+  		ProgID = s 'AU.Common.Config.1'
+  		VersionIndependentProgID = s 'AU.Common.Config'
+  		ForceRemove 'Programmable'
+  		InprocServer32 = s '%MODULE%'
+  		{
+  			val ThreadingModel = s 'Both'
+  		}
+  		val AppID = s '%APPID%'
+  		'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
+  	}
+  }
+}

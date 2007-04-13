@@ -1,0 +1,26 @@
+HKCR
+{
+	AU.Common.SessionMan.1 = s 'SessionMan Class'
+	{
+		CLSID = s '{16F97D80-2DA0-4D08-8D87-2B4455D4E743}'
+	}
+	AU.Common.SessionMan = s 'SessionMan Class'
+	{
+		CLSID = s '{16F97D80-2DA0-4D08-8D87-2B4455D4E743}'
+		CurVer = s 'AU.Common.SessionMan.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {16F97D80-2DA0-4D08-8D87-2B4455D4E743} = s 'SessionMan Class'
+		{
+			ProgID = s 'AU.Common.SessionMan.1'
+			VersionIndependentProgID = s 'AU.Common.SessionMan'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Both'
+			}
+			'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
+		}
+	}
+}
