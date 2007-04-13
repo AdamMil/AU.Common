@@ -1,0 +1,26 @@
+HKCR
+{
+	AU.Common.VarArray.1 = s 'VarArray Class'
+	{
+		CLSID = s '{B31065DA-8CD3-4A97-91D6-B6933105BFD8}'
+	}
+	AU.Common.VarArray = s 'VarArray Class'
+	{
+		CLSID = s '{B31065DA-8CD3-4A97-91D6-B6933105BFD8}'
+		CurVer = s 'AU.Common.VarArray.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {B31065DA-8CD3-4A97-91D6-B6933105BFD8} = s 'VarArray Class'
+		{
+			ProgID = s 'AU.Common.VarArray.1'
+			VersionIndependentProgID = s 'AU.Common.VarArray'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			'TypeLib' = s '{A553E0A6-F9C3-48C3-98B0-4827C7417E74}'
+		}
+	}
+}
