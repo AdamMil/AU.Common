@@ -1,0 +1,3 @@
+This ActiveX library is a set of tools to aid in the creation of ASP pages and other COM objects.  It comes from years of experience working with ASP, but is not quite complete. As of release 4, the library also includes a number of server-side and client-side javascript libraries. Due to numerous limitations in the compilers that come with Microsoft Visual Studio 6.x, this code only works with the updated compilers from MSVC++ 7.0 (.NET). These can be downloaded for free from Microsoft. It also requires the ATL library that comes with MSVC 7.
+
+This project is mostly useless these days, as few people code ASP with COM and ActiveX anymore.
